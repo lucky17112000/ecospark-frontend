@@ -3,12 +3,18 @@ import AppField from "@/components/shared/Appfield";
 import AppSubmitButton from "@/components/shared/AppSubmitButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { loginAction } from "@/services/auth.service";
-import { ILoginPayload, loginZodSchema } from "@/zod/auth.validation";
+import { loginAction, registerAction } from "@/services/auth.service";
+import {
+  ILoginPayload,
+  IRegisterPayload,
+  loginZodSchema,
+  registerZodSchema,
+} from "@/zod/auth.validation";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 // ─── Google SVG Icon ──────────────────────────────────────────────────────────
@@ -61,16 +67,18 @@ const BrandMark = () => (
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-const LoginForm = () => {
+const RegisterForm = () => {
+  const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const { mutateAsync } = useMutation({
-    mutationFn: (payload: ILoginPayload) => loginAction(payload),
+    mutationFn: (payload: IRegisterPayload) => registerAction(payload),
   });
 
   const form = useForm({
     defaultValues: {
+      name: "",
       email: "",
       password: "",
     },
@@ -80,7 +88,10 @@ const LoginForm = () => {
         const result = (await mutateAsync(value)) as any;
         if (!result.success) {
           setServerError(result.message || "Login failed. Please try again.");
+          return;
         }
+
+        router.push(`/verify-email?email=${encodeURIComponent(value.email)}`);
       } catch (error: any) {
         console.error("Login error:", error);
         setServerError(
@@ -151,10 +162,23 @@ const LoginForm = () => {
             }}
             className="space-y-4"
           >
+            <form.Field
+              name="name"
+              validators={{ onChange: registerZodSchema.shape.name }}
+            >
+              {(field) => (
+                <AppField
+                  field={field}
+                  label="Name"
+                  type="text"
+                  placeholder="Enter your name"
+                />
+              )}
+            </form.Field>
             {/* Email */}
             <form.Field
               name="email"
-              validators={{ onChange: loginZodSchema.shape.email }}
+              validators={{ onChange: registerZodSchema.shape.email }}
             >
               {(field) => (
                 <AppField
@@ -169,7 +193,7 @@ const LoginForm = () => {
             {/* Password */}
             <form.Field
               name="password"
-              validators={{ onChange: loginZodSchema.shape.password }}
+              validators={{ onChange: registerZodSchema.shape.password }}
             >
               {(field) => (
                 <AppField
@@ -195,16 +219,6 @@ const LoginForm = () => {
                 />
               )}
             </form.Field>
-
-            {/* Forgot password */}
-            <div className="text-right -mt-1">
-              <Link
-                href="/forgot-password"
-                className="text-xs text-neutral-400 hover:text-black underline-offset-4 hover:underline transition-colors"
-              >
-                Forgot password?
-              </Link>
-            </div>
 
             {/* Server error */}
             {serverError && (
@@ -233,7 +247,7 @@ const LoginForm = () => {
                     disabled:opacity-50 disabled:cursor-not-allowed
                   "
                 >
-                  Log in
+                  Register
                 </AppSubmitButton>
               )}
             </form.Subscribe>
@@ -242,10 +256,10 @@ const LoginForm = () => {
             <p className="text-center text-sm text-neutral-400 pt-1">
               Don&apos;t have an account?{" "}
               <Link
-                href="/register"
+                href="/login"
                 className="text-black font-medium hover:underline underline-offset-4 transition-colors"
               >
-                Sign up
+                login
               </Link>
             </p>
           </form>
@@ -255,4 +269,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default RegisterForm;

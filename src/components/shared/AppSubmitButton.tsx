@@ -18,7 +18,11 @@ const AppSubmitButton = ({
 }: AppSubmitButtProps) => {
   const isDisabled = disabled || isPending;
   return (
-    <Button type="submit" disabled={isDisabled}>
+    <Button
+      type="submit"
+      className={` ${classname || ""}`}
+      disabled={isDisabled}
+    >
       {isPending ? (
         <>
           <Loader2 className="animate-spin" aria-hidden="true" />

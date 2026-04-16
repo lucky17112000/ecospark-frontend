@@ -13,15 +13,51 @@ type AppFieldProps = {
   append?: React.ReactNode;
   prepand?: React.ReactNode;
   classname?: string;
-  disabled?:false;
+  disabled?: boolean;
 };
-const getErrorMessage = (error: unknown) => {
-  if (typeof error === "string") {
-    return error;
+
+const getErrorMessage = (error: unknown): string => {
+  if (error == null) return "";
+
+  if (typeof error === "string") return error;
+  if (
+    typeof error === "number" ||
+    typeof error === "boolean" ||
+    typeof error === "bigint"
+  ) {
+    return String(error);
   }
+
+  if (Array.isArray(error)) {
+    return error.length > 0 ? getErrorMessage(error[0]) : "";
+  }
+
   if (error instanceof Error) {
-    if ("message" in error && typeof error.message === "string") {
-      return error.message;
+    return typeof error.message === "string" ? error.message : String(error);
+  }
+
+  if (typeof error === "object") {
+    const maybeMessage = (error as { message?: unknown }).message;
+    if (typeof maybeMessage === "string") return maybeMessage;
+
+    const maybeIssues = (error as { issues?: unknown }).issues;
+    if (Array.isArray(maybeIssues) && maybeIssues.length > 0) {
+      const firstIssueMessage = (maybeIssues[0] as { message?: unknown })
+        ?.message;
+      if (typeof firstIssueMessage === "string") return firstIssueMessage;
+      return getErrorMessage(maybeIssues[0]);
+    }
+
+    const maybeErrors = (error as { errors?: unknown }).errors;
+    if (Array.isArray(maybeErrors) && maybeErrors.length > 0) {
+      return getErrorMessage(maybeErrors[0]);
+    }
+
+    try {
+      const json = JSON.stringify(error);
+      if (json && json !== "{}") return json;
+    } catch {
+      // ignore
     }
   }
 
@@ -77,7 +113,7 @@ const AppField = ({
           )}
         />
         {append && (
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none z-10">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-auto z-10">
             {append}
           </div>
         )}
