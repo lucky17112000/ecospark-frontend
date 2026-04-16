@@ -8,10 +8,10 @@ const IdeaList = () => {
     queryKey: ["idea"],
     queryFn: () => getIdea(),
   });
-  console.log(data.data);
+  console.log(data?.data);
   return (
     <div>
-      {data.data?.map((idea: any) => (
+      {Array.isArray(data?.data) && data?.data?.map((idea: any) => (
         <div key={idea.id}>{idea.title}</div>
       ))}
     </div>
