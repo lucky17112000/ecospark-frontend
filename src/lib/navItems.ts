@@ -119,15 +119,10 @@ export const userNavItems: NavSection[] = [
         href: "/dashboard/selected-idea",
         icon: "Calendar",
       },
-      {
-        title: "Rejected Ideas",
-        href: "/dashboard/rejected-idea",
-        icon: "ClipboardList",
-      },
     ],
   },
   {
-    title: "",
+    title: "Idea Monitoring",
     items: [
       {
         title: "Under Review Ideas",
@@ -135,9 +130,9 @@ export const userNavItems: NavSection[] = [
         icon: "FileText",
       },
       {
-        title: "Health Records",
-        href: "/dashboard/health-records",
-        icon: "Activity",
+        title: "Rejected Ideas",
+        href: "/dashboard/rejected-idea",
+        icon: "ClipboardList",
       },
     ],
   },

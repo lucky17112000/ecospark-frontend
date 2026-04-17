@@ -13,7 +13,7 @@ import DashboardSidebarContent from "./DashboardSidebarContent";
 const DashboardSidebar = async () => {
   // const navItems: NavSection[] = getCommonNavItems(userInfo.role);
   const userInfo = await getUserInfo();
-  console.log("User Info in DashboardSidebar:", userInfo); // Debug log to check user info
+  // console.log("User Info in DashboardSidebar:", userInfo); // Debug log to check user info
   const navItems = getNavItemsByRole(userInfo.role);
   const dashBoardHome = getDashboardRoute(userInfo.role);
 

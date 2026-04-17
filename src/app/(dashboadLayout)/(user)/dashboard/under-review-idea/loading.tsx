@@ -1,7 +1,8 @@
+import MySkeleton from "@/components/shared/MySkeleton";
 import React from "react";
 
 const underReviewLoading = () => {
-  return <div>Under Review Loading...</div>;
+  return <MySkeleton />;
 };
 
 export default underReviewLoading;

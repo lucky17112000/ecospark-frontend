@@ -1,7 +1,8 @@
+import MySkeleton from "@/components/shared/MySkeleton";
 import React from "react";
 
 const rejectedLoading = () => {
-  return <div>Rejected Idea Loading...</div>;
+  return <MySkeleton />;
 };
 
 export default rejectedLoading;

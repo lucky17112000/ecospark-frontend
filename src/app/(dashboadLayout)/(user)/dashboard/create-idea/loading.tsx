@@ -1,7 +1,9 @@
+import MySkeleton from "@/components/shared/MySkeleton";
+// import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
 
 const createIdeaLoading = () => {
-  return <div>create idea loading...</div>;
+  return <MySkeleton />;
 };
 
 export default createIdeaLoading;
