@@ -13,7 +13,12 @@ import {
 } from "@/zod/auth.validation";
 import axios from "axios";
 import { ApiError } from "next/dist/server/api-utils";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+if (!BASE_API_URL) {
+  throw new Error("BASE_API_URL is not defined in environment variables");
+}
 
 export const getIdea = async () => {
   const idea = await httpClient.get("/idea");
@@ -132,3 +137,34 @@ export const verifyEmailAction = async (
     return { success: false, message: "Email verification failed" };
   }
 };
+
+export async function getUserInfo() {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const sessionToken = cookieStore.get("better-auth.session_token")?.value;
+  if (!accessToken) {
+    return {
+      id: "",
+      email: "",
+      role: "",
+      needPasswordChange: false,
+    };
+  }
+  const res = await fetch(`${BASE_API_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Cookie: `accessToken=${accessToken} ; better-auth.session_token=${sessionToken}`,
+    },
+  });
+  if (!res.ok) {
+    return {
+      id: "",
+      email: "",
+      role: "",
+      needPasswordChange: false,
+    };
+  }
+  const { data } = await res.json();
+  return data;
+}
