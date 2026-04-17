@@ -1,7 +1,11 @@
 import React from "react";
 
-const myProfilePage = () => {
-  return <div>my profile page</div>;
+import MyProfile from "@/components/shared/MyProfile";
+import { getUserInfo } from "@/services/auth.service";
+
+const MyProfilePage = async () => {
+  const data = await getUserInfo();
+  return <MyProfile data={data} />;
 };
 
-export default myProfilePage;
+export default MyProfilePage;

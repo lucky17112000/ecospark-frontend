@@ -9,7 +9,7 @@ export default function CommonProtectedLayout({
 }>) {
   return (
     <>
-      common protected layout
+      {/* common protected layout */}
       {children}
     </>
   );

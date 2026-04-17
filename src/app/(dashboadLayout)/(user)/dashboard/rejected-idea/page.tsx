@@ -1,7 +1,8 @@
+import RejectedIdeaPage from "@/components/modules/idea/RejectedIdea";
 import React from "react";
 
 const RejectedIdea = () => {
-  return <div>Rejected Idea Page</div>;
+  return <RejectedIdeaPage />;
 };
 
 export default RejectedIdea;
