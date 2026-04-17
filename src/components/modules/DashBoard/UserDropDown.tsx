@@ -16,23 +16,32 @@ interface UserDropDownProps {
 }
 
 const UserDropDown = ({ userInfo }: UserDropDownProps) => {
+  const displayName =
+    userInfo?.name?.trim() || userInfo?.email?.split("@")[0]?.trim() || "User";
+
+  const userInitial = displayName?.[0]?.toUpperCase() || "U";
+
+  const displayRole = userInfo?.role
+    ? userInfo.role.toLocaleUpperCase().replace("_", " ")
+    : "";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant={"outline"} size={"icon"} className="rounded-full">
-          <span className="text-sm font-semibold ">
-            {userInfo.name.charAt(0)}
-          </span>
+          <span className="text-sm font-semibold ">{userInitial}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={"end"} className="w-48">
         <DropdownMenuLabel className="flex flex-col items-start gap-1">
           <div className="flex flex-col space-y-1">
-            <p className="font-semibold text-sm">{userInfo.name}</p>
-            <p className="text-muted-foreground">{userInfo.email}</p>
-            <p className="text-muted-foreground">
-              {userInfo.role.toLocaleUpperCase().replace("_", " ")}
-            </p>
+            <p className="font-semibold text-sm">{displayName}</p>
+            {userInfo?.email ? (
+              <p className="text-muted-foreground">{userInfo.email}</p>
+            ) : null}
+            {displayRole ? (
+              <p className="text-muted-foreground">{displayRole}</p>
+            ) : null}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

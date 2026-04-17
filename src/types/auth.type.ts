@@ -60,3 +60,4 @@ export interface IRegisterResponse {
     deletedAt?: Date | null | undefined;
   };
 }
+export type VOTE_TYPE = "UP" | "DOWN";

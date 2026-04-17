@@ -20,10 +20,10 @@ if (!BASE_API_URL) {
   throw new Error("BASE_API_URL is not defined in environment variables");
 }
 
-export const getIdea = async () => {
-  const idea = await httpClient.get("/idea");
-  return idea;
-};
+// export const getIdea = async () => {
+//   const idea = await httpClient.get("/idea");
+//   return idea;
+// };
 
 export const loginAction = async (
   payload: ILoginPayload,

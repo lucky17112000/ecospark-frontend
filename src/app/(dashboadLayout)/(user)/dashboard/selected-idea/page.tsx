@@ -1,7 +1,8 @@
+import SelectedIdeaPage from "@/components/modules/idea/SelectedIdeaPage";
 import React from "react";
 
-const SelectedIdeaPage = () => {
-  return <div>seleected idea page</div>;
+const SelectedIdeaPageComponent = () => {
+  return <SelectedIdeaPage />;
 };
 
-export default SelectedIdeaPage;
+export default SelectedIdeaPageComponent;

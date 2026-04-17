@@ -73,7 +73,7 @@ const pickImage = (urls: string[], preferredIndex: number): string => {
   return urls[preferredIndex] || urls[0] || DEFAULT_IDEA_IMAGE;
 };
 
-const IdeaList = () => {
+const SelectedIdeaPage = () => {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
@@ -88,7 +88,7 @@ const IdeaList = () => {
   }, [data]);
 
   const underReviewIdeas = useMemo(() => {
-    return ideas.filter((idea) => idea?.status === "UNDER_REVIEW");
+    return ideas.filter((idea) => idea?.status === "APPROVED");
   }, [ideas]);
 
   const selectedImages = useMemo(() => {
@@ -394,4 +394,4 @@ const IdeaList = () => {
   );
 };
 
-export default IdeaList;
+export default SelectedIdeaPage;

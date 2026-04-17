@@ -110,6 +110,11 @@ export const userNavItems: NavSection[] = [
     title: "Ideas world",
     items: [
       {
+        title: "Create Idea",
+        href: "/dashboard/create-idea",
+        icon: "Calendar",
+      },
+      {
         title: "Approved Ideas",
         href: "/dashboard/selected-idea",
         icon: "Calendar",

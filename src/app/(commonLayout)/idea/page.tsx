@@ -1,5 +1,6 @@
 import IdeaList from "@/components/modules/idea/IdeaList";
-import { getIdea } from "@/services/auth.service";
+import { getIdea } from "@/services/idea.services";
+// import { getIdea } from "@/services/auth.service";
 import {
   dehydrate,
   HydrationBoundary,
@@ -15,9 +16,10 @@ const ideaPage = async () => {
   });
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <IdeaList />
-    </HydrationBoundary>
+    // <HydrationBoundary state={dehydrate(queryClient)}>
+    //   <IdeaList />
+    // </HydrationBoundary>
+    <h1>Ideas</h1>
   );
 };
 
