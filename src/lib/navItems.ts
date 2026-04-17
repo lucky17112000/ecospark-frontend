@@ -126,7 +126,7 @@ export const userNavItems: NavSection[] = [
     items: [
       {
         title: "Under Review Ideas",
-        href: "/dashboard/under-review-ideas",
+        href: "/dashboard/under-review-idea",
         icon: "FileText",
       },
       {
