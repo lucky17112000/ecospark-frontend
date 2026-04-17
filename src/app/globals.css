@@ -128,3 +128,52 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  @keyframes eco-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-eco-float {
+    animation: eco-float 6s ease-in-out infinite;
+  }
+
+  @keyframes eco-marquee-ltr {
+    from {
+      transform: translateX(-50%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .eco-marquee {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+  }
+
+  .eco-marquee-track {
+    animation: eco-marquee-ltr 18s linear infinite;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-eco-float {
+      animation: none;
+    }
+    .eco-marquee-track {
+      animation: none;
+    }
+  }
+}

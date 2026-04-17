@@ -1,4 +1,5 @@
 import IdeaList from "@/components/modules/idea/IdeaList";
+import AllIdeas from "@/components/shared/Idea";
 import { getIdea } from "@/services/idea.services";
 // import { getIdea } from "@/services/auth.service";
 import {
@@ -19,7 +20,7 @@ const ideaPage = async () => {
     // <HydrationBoundary state={dehydrate(queryClient)}>
     //   <IdeaList />
     // </HydrationBoundary>
-    <h1>Ideas</h1>
+    <AllIdeas />
   );
 };
 
