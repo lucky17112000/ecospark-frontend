@@ -4,6 +4,8 @@ import { getIdea } from "@/services/idea.services";
 import { QueryClient } from "@tanstack/react-query";
 import React from "react";
 
+export const dynamic = "force-dynamic";
+
 const UnderReviewPage = async () => {
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery({

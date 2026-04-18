@@ -82,6 +82,7 @@ const AllIdeas = () => {
     queryKey: ["idea"],
     queryFn: getIdea,
   });
+  console.log("Fetched ideas:", data?.meta);
 
   const ideas = useMemo(() => {
     return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
@@ -117,11 +118,11 @@ const AllIdeas = () => {
         <div className="flex items-end justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">
-              Under Review Ideas
+              All Approved Ideas
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Showing only ideas with status UNDER_REVIEW.
-            </p>
+            {/* <p className="text-sm text-muted-foreground">
+              Showing only ideas with status APPROVED.
+            </p> */}
           </div>
           <Badge variant="secondary">{underReviewIdeas.length}</Badge>
         </div>
@@ -147,7 +148,7 @@ const AllIdeas = () => {
                   <img
                     src={coverImage}
                     alt={idea?.title || "Idea image"}
-                    className="h-48 w-full object-cover transition-transform duration-300 ease-out group-hover/card:scale-105"
+                    className="h-48 w-full bg-muted/30 object-contain"
                     loading="lazy"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
@@ -283,7 +284,7 @@ const AllIdeas = () => {
                 <img
                   src={selectedImages.coverImage}
                   alt="Idea cover"
-                  className="h-56 w-full rounded-xl object-cover"
+                  className="h-56 w-full rounded-xl bg-muted/30 object-contain"
                   loading="lazy"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src =
@@ -309,7 +310,7 @@ const AllIdeas = () => {
                     <img
                       src={selectedImages.descriptionImage}
                       alt="Description image"
-                      className="h-52 w-full rounded-xl object-cover"
+                      className="h-52 w-full rounded-xl bg-muted/30 object-contain"
                       loading="lazy"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
@@ -330,7 +331,7 @@ const AllIdeas = () => {
                     <img
                       src={selectedImages.solutionImage}
                       alt="Solution image"
-                      className="h-52 w-full rounded-xl object-cover"
+                      className="h-52 w-full rounded-xl bg-muted/30 object-contain"
                       loading="lazy"
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src =
@@ -360,7 +361,7 @@ const AllIdeas = () => {
                               key={url}
                               src={url}
                               alt="Idea image"
-                              className="aspect-square w-full rounded-xl object-cover"
+                              className="aspect-square w-full rounded-xl bg-muted/30 object-contain"
                               loading="lazy"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src =
@@ -384,11 +385,11 @@ const AllIdeas = () => {
           </DrawerContent>
         </Drawer>
 
-        {underReviewIdeas.length === 0 ? (
+        {/* {underReviewIdeas.length === 0 ? (
           <div className="mt-10 rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
             No UNDER_REVIEW ideas found.
           </div>
-        ) : null}
+        ) : null} */}
       </div>
     </div>
   );

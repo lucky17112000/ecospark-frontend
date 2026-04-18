@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { LeafIcon, MenuIcon } from "lucide-react";
+import { ModeToggle } from "./ThemeShare";
 
 export type LandingNavLink = { label: string; href: string };
 
@@ -27,7 +28,7 @@ export type LandingNavbarProps = {
 
 const DEFAULT_LINKS: LandingNavLink[] = [
   { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Dashboard", href: "/dashboard" },
   { label: "Ideas", href: "/idea" },
 ];
 
@@ -129,6 +130,7 @@ const LandingNavbar = ({
             </SheetContent>
           </Sheet>
         </div>
+        <ModeToggle />
       </div>
     </header>
   );

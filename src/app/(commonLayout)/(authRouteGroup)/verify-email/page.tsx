@@ -1,8 +1,12 @@
 import VerifyEmail from "@/components/modules/auth/VerifyEmail";
-import React from "react";
+import React, { Suspense } from "react";
 
 const verifyPassword = () => {
-  return <VerifyEmail />;
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmail />
+    </Suspense>
+  );
 };
 
 export default verifyPassword;
