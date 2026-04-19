@@ -8,7 +8,11 @@ export const authRoutes = [
 ] as const;
 
 export const isAuthRoute = (pathName: string) => {
-  return authRoutes.some((router: string) => router === pathName);
+  const normalizedPathName =
+    pathName.length > 1 && pathName.endsWith("/")
+      ? pathName.slice(0, -1)
+      : pathName;
+  return authRoutes.some((router: string) => router === normalizedPathName);
 };
 export type RouteConfig = {
   exact: string[];
