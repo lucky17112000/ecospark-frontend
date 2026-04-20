@@ -1,7 +1,7 @@
 "use client";
 
 import { getIdea } from "@/services/idea.services";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
@@ -29,12 +29,34 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { castVote } from "@/services/vote.service";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
 
 type ImageLike = string | { url?: unknown };
 
 type VoteLike = string | { type?: unknown };
+
+type VoteRecordLike = {
+  userId?: unknown;
+  type?: unknown;
+  voteType?: unknown;
+};
 
 const getVoteType = (vote: VoteLike): "UP" | "DOWN" | null => {
   if (vote === "UP" || vote === "DOWN") return vote;
@@ -43,6 +65,21 @@ const getVoteType = (vote: VoteLike): "UP" | "DOWN" | null => {
     return maybeType === "UP" || maybeType === "DOWN" ? maybeType : null;
   }
   return null;
+};
+
+const getVoteTypeFromRecord = (vote: unknown): "UP" | "DOWN" | null => {
+  if (vote === "UP" || vote === "DOWN") return vote;
+  if (!vote || typeof vote !== "object") return null;
+
+  const record = vote as VoteRecordLike;
+  const maybeType = record.type ?? record.voteType;
+  return maybeType === "UP" || maybeType === "DOWN" ? maybeType : null;
+};
+
+const getVoteUserIdFromRecord = (vote: unknown): string | null => {
+  if (!vote || typeof vote !== "object") return null;
+  const record = vote as VoteRecordLike;
+  return typeof record.userId === "string" ? record.userId : null;
 };
 
 const normalizeImageUrls = (images: unknown): string[] => {
@@ -84,10 +121,31 @@ const pickImage = (urls: string[], preferredIndex: number): string => {
   return urls[preferredIndex] || urls[0] || DEFAULT_IDEA_IMAGE;
 };
 
-const AllIdeas = () => {
+const AllIdeas = ({ user }: { user?: unknown }) => {
+  const [voteErrors, setVoteErrors] = useState<Record<string, string>>({});
+  const [duplicateVoteDialog, setDuplicateVoteDialog] = useState<{
+    open: boolean;
+    message: string;
+  }>({ open: false, message: "" });
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
+  const queryClient = useQueryClient();
+
+  const userId =
+    user && typeof user === "object" && "id" in (user as Record<string, unknown>)
+      ? String((user as Record<string, unknown>).id ?? "")
+      : user &&
+          typeof user === "object" &&
+          "data" in (user as Record<string, unknown>) &&
+          (user as { data?: unknown }).data &&
+          typeof (user as { data?: unknown }).data === "object" &&
+          "id" in ((user as { data?: unknown }).data as Record<string, unknown>)
+        ? String(
+            (((user as { data?: unknown }).data as Record<string, unknown>)
+              .id as unknown) ?? "",
+          )
+        : "";
 
   const { data } = useQuery({
     queryKey: ["idea"],
@@ -100,7 +158,68 @@ const AllIdeas = () => {
   //     id: idea?.id,
   //   })),
   // );
-  console.log("Fetched ideas:", data?.data);
+  // console.log("Fetched ideas:", data?.data);
+  const { mutateAsync, isPending: isVoting } = useMutation({
+    mutationFn: (payload: { ideaId: string; voteType: "UP" | "DOWN" }) =>
+      castVote(payload.ideaId, payload.voteType),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["idea"] });
+    },
+  });
+
+  const clearVoteError = (ideaId: string) => {
+    setVoteErrors((prev) => {
+      if (!prev[ideaId]) return prev;
+      const next = { ...prev };
+      delete next[ideaId];
+      return next;
+    });
+  };
+
+  const handleVote = async (idea: IIdeaResponse, voteType: "UP" | "DOWN") => {
+    const ideaId = idea.id;
+
+    // Client-side duplicate prevention: if we can identify the current user
+    // and the idea includes vote records, block duplicate requests.
+    if (userId && Array.isArray((idea as unknown as { votes?: unknown }).votes)) {
+      const votes = (idea as unknown as { votes: unknown[] }).votes;
+      const existing = votes.find((vote) => {
+        const voteUserId = getVoteUserIdFromRecord(vote);
+        return voteUserId && voteUserId === userId;
+      });
+
+      const existingType = getVoteTypeFromRecord(existing);
+      if (existingType && existingType === voteType) {
+        setDuplicateVoteDialog({
+          open: true,
+          message: "You have already voted for this idea with the same type.",
+        });
+        return;
+      }
+    }
+
+    clearVoteError(ideaId);
+    try {
+      await mutateAsync({ ideaId, voteType });
+      clearVoteError(ideaId);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to cast vote. Please try again.";
+      const normalized = message.toLowerCase();
+      const isDuplicateVote =
+        normalized.includes("already voted") &&
+        (normalized.includes("same type") || normalized.includes("same"));
+
+      if (isDuplicateVote) {
+        setDuplicateVoteDialog({ open: true, message });
+        return;
+      }
+
+      setVoteErrors((prev) => ({ ...prev, [ideaId]: message }));
+    }
+  };
 
   const ideas = useMemo(() => {
     return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
@@ -132,6 +251,26 @@ const AllIdeas = () => {
 
   return (
     <div className="w-full">
+      <AlertDialog
+        open={duplicateVoteDialog.open}
+        onOpenChange={(open) => {
+          setDuplicateVoteDialog((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Vote already submitted</AlertDialogTitle>
+            <AlertDialogDescription>
+              {duplicateVoteDialog.message ||
+                "You already voted for this idea with the same type."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>OK</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="mx-auto w-full max-w-6xl px-4 py-6">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -149,6 +288,8 @@ const AllIdeas = () => {
           {underReviewIdeas.map((idea) => {
             const imageUrls = normalizeImageUrls(idea?.images);
             const coverImage = pickImage(imageUrls, 0);
+
+            const voteErrorForCard = idea?.id ? voteErrors[idea.id] : "";
 
             const authorName =
               idea?.author?.name || idea?.authorName || "Unknown";
@@ -266,6 +407,47 @@ const AllIdeas = () => {
                       <span>Up: {upVotes}</span>
                       <span>Down: {downVotes}</span>
                     </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            disabled={isVoting || !idea?.id}
+                          >
+                            Vote
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem
+                            disabled={isVoting || !idea?.id}
+                            onClick={() => {
+                              if (!idea?.id) return;
+                              handleVote(idea, "UP");
+                            }}
+                          >
+                            UP
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={isVoting || !idea?.id}
+                            onClick={() => {
+                              if (!idea?.id) return;
+                              handleVote(idea, "DOWN");
+                            }}
+                          >
+                            DOWN
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {voteErrorForCard ? (
+                      <p className="text-xs text-destructive">
+                        {voteErrorForCard}
+                      </p>
+                    ) : null}
                   </div>
                 </CardFooter>
               </Card>

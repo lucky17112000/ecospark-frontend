@@ -1,12 +1,8 @@
-import IdeaList from "@/components/modules/idea/IdeaList";
 import AllIdeas from "@/components/shared/Idea";
 import { getIdea } from "@/services/idea.services";
+import { getUserInfo } from "@/services/auth.service";
 // import { getIdea } from "@/services/auth.service";
-import {
-  dehydrate,
-  HydrationBoundary,
-  QueryClient,
-} from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import React from "react";
 
 const ideaPage = async () => {
@@ -15,6 +11,8 @@ const ideaPage = async () => {
     queryKey: ["idea"],
     queryFn: getIdea,
   });
+
+  const user = await getUserInfo();
   // const quryClient2 = new QueryClient();
   // // await quryClient2.prefetchQuery({
   // //   queryKey: ["deleteIdea"],
@@ -25,7 +23,7 @@ const ideaPage = async () => {
     // <HydrationBoundary state={dehydrate(queryClient)}>
     //   <IdeaList />
     // </HydrationBoundary>
-    <AllIdeas />
+    <AllIdeas user={user} />
   );
 };
 
