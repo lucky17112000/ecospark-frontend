@@ -1,3 +1,4 @@
+import { httpClient } from "@/lib/axios/httpClient";
 import type { ApiResponse } from "@/types/api.types";
 import type { IIdeaResponse } from "@/types/idea.type";
 import {
@@ -135,6 +136,45 @@ export const createIdea = async (
     return parsed as ApiResponse<IIdeaResponse>;
   } catch (error) {
     console.error("Error creating idea:", error);
+    throw error;
+  }
+};
+export const ideaUpdatebyAdminAction = async (payload: any) => {
+  try {
+    const response = await fetch("/api/idea/status", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+      credentials: "include",
+    });
+
+    const text = await response.text();
+    const parsed = (() => {
+      try {
+        return JSON.parse(text) as unknown;
+      } catch {
+        return null;
+      }
+    })();
+
+    if (!response.ok) {
+      const messageFromBody =
+        parsed && typeof parsed === "object"
+          ? (parsed as { message?: unknown }).message
+          : undefined;
+
+      const message =
+        typeof messageFromBody === "string" && messageFromBody.trim()
+          ? messageFromBody.trim()
+          : text.trim() || `Failed to update idea (status ${response.status})`;
+
+      throw new Error(message);
+    }
+
+    if (!parsed) throw new Error("Unexpected response from server");
+    return parsed as ApiResponse<unknown>;
+  } catch (error) {
+    console.error("Error updating idea:", error);
     throw error;
   }
 };

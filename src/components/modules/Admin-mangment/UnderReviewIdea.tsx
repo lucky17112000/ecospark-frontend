@@ -1,7 +1,7 @@
 "use client";
 
-import { getIdea } from "@/services/idea.services";
-import { useQuery } from "@tanstack/react-query";
+import { getIdea, ideaUpdatebyAdminAction } from "@/services/idea.services";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
@@ -29,6 +29,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useForm } from "@tanstack/react-form";
+// import { DialogTitle } from "@base-ui/react";
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
 
@@ -72,42 +81,39 @@ const safeFormatDate = (value: unknown) => {
 const pickImage = (urls: string[], preferredIndex: number): string => {
   return urls[preferredIndex] || urls[0] || DEFAULT_IDEA_IMAGE;
 };
+//dialog
 
-const IdeaList = ({ user }: { user: any }) => {
+const UnderReviewIdea = () => {
   const router = useRouter();
+  const handlclick = ({ id }: { id: string }) => {
+    router.push(`/admin/dashboard/under-review-idea/${id}`);
+  };
   const [drawerOpen, setDrawerOpen] = useState(false);
+  //   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
-  const userId =
-    typeof user?.id === "string"
-      ? user.id
-      : typeof user?.data?.id === "string"
-        ? user.data.id
-        : typeof user?.user?.id === "string"
-          ? user.user.id
-          : "";
 
   const { data } = useQuery({
     queryKey: ["idea"],
     queryFn: getIdea,
   });
 
+  //   const form = useForm({
+  //     defaultValues: {
+  //       ideaId: "",
+  //       ideaStatus: "",
+  //       message: "",
+  //       reason: "",
+  //     },
+  //   });
+
   const ideas = useMemo(() => {
     return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
   }, [data]);
 
-  // const underReviewIdeas = useMemo(() => {
-  //   return ideas.filter((idea) => idea?.status === "UNDER_REVIEW");
-  // }, [ideas]);
   const underReviewIdeas = useMemo(() => {
-    return ideas.filter((idea) => {
-      const matchesStatus = idea?.status === "UNDER_REVIEW";
-      if (!matchesStatus) return false;
-
-      // If parent passes user id, scope to that user's ideas
-      if (!userId) return true;
-      return idea?.authorId === userId || idea?.author?.id === userId;
-    });
-  }, [ideas, userId]);
+    return ideas.filter((idea) => idea?.status === "UNDER_REVIEW");
+  }, [ideas]);
 
   const selectedImages = useMemo(() => {
     const urls = normalizeImageUrls(selectedIdea?.images);
@@ -130,6 +136,7 @@ const IdeaList = ({ user }: { user: any }) => {
   }, [selectedIdea]);
 
   return (
+    //dialog
     <div className="w-full">
       <div className="mx-auto w-full max-w-6xl px-4 py-6">
         <div className="flex items-end justify-between gap-3">
@@ -244,6 +251,9 @@ const IdeaList = ({ user }: { user: any }) => {
                     }}
                   >
                     {idea?.isPaid ? "See more (Pay)" : "See more"}
+                  </Button>
+                  <Button onClick={() => handlclick({ id: idea?.id })}>
+                    Edit Idea
                   </Button>
                 </CardFooter>
               </Card>
@@ -401,6 +411,7 @@ const IdeaList = ({ user }: { user: any }) => {
             </div>
           </DrawerContent>
         </Drawer>
+        {/*  */}
 
         {underReviewIdeas.length === 0 ? (
           <div className="mt-10 rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
@@ -412,4 +423,4 @@ const IdeaList = ({ user }: { user: any }) => {
   );
 };
 
-export default IdeaList;
+export default UnderReviewIdea;

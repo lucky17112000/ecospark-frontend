@@ -73,7 +73,7 @@ const pickImage = (urls: string[], preferredIndex: number): string => {
   return urls[preferredIndex] || urls[0] || DEFAULT_IDEA_IMAGE;
 };
 
-const SelectedIdeaPage = () => {
+const SelectedIdeaPage = ({ user }: { user: any }) => {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
@@ -83,13 +83,39 @@ const SelectedIdeaPage = () => {
     queryFn: getIdea,
   });
 
-  const ideas = useMemo(() => {
+  const userId =
+    typeof user?.id === "string"
+      ? user.id
+      : typeof user?.data?.id === "string"
+        ? user.data.id
+        : typeof user?.user?.id === "string"
+          ? user.user.id
+          : "";
+
+  // const rejectedIdeas = useMemo(() => {
+  //     return ideas.filter((idea) => {
+  //       const matchesStatus = idea?.status === "REJECTED";
+  //       if (!matchesStatus) return false;
+
+  //       // If parent passes user id, scope to that user's ideas
+  //       if (!userId) return true;
+  //       return idea?.authorId === userId || idea?.author?.id === userId;
+  //     });
+  //   }, [ideas, userId]);
+  const allIdeas = useMemo(() => {
     return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
   }, [data]);
 
-  const underReviewIdeas = useMemo(() => {
-    return ideas.filter((idea) => idea?.status === "APPROVED");
-  }, [ideas]);
+  const approvedIdeas = useMemo(() => {
+    return allIdeas.filter((idea) => {
+      const matchesStatus = idea?.status === "APPROVED";
+      if (!matchesStatus) return false;
+
+      // If parent passes user id, scope to that user's ideas
+      if (!userId) return true;
+      return idea?.authorId === userId || idea?.author?.id === userId;
+    });
+  }, [allIdeas, userId]);
 
   const selectedImages = useMemo(() => {
     const urls = normalizeImageUrls(selectedIdea?.images);
@@ -117,17 +143,17 @@ const SelectedIdeaPage = () => {
         <div className="flex items-end justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">
-              Under Review Ideas
+              Approved Ideas
             </h1>
             <p className="text-sm text-muted-foreground">
-              Showing only ideas with status UNDER_REVIEW.
+              Showing only ideas with status APPROVED.
             </p>
           </div>
-          <Badge variant="secondary">{underReviewIdeas.length}</Badge>
+          <Badge variant="secondary">{approvedIdeas.length}</Badge>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {underReviewIdeas.map((idea) => {
+          {approvedIdeas.map((idea) => {
             const imageUrls = normalizeImageUrls(idea?.images);
             const coverImage = pickImage(imageUrls, 0);
 
@@ -384,9 +410,9 @@ const SelectedIdeaPage = () => {
           </DrawerContent>
         </Drawer>
 
-        {underReviewIdeas.length === 0 ? (
+        {approvedIdeas.length === 0 ? (
           <div className="mt-10 rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
-            No UNDER_REVIEW ideas found.
+            No APPROVED ideas found.
           </div>
         ) : null}
       </div>

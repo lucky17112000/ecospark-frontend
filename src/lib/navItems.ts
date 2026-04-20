@@ -38,69 +38,63 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
 
 export const adminNavItems: NavSection[] = [
   {
-    title: "User Management",
+    title: "Ecosystem Management",
     items: [
       {
-        title: "Admins",
-        href: "/admin/dashboard/admins-management",
-        icon: "Shield",
-      },
-      {
-        title: "Doctors",
-        href: "/admin/dashboard/doctors-management",
-        icon: "Stethoscope",
-      },
-      {
-        title: "Patients",
-        href: "/admin/dashboard/patients-management",
-        icon: "Users",
+        title: "Ideas",
+        href: "/admin/dashboard/idea-managment",
+        icon: "Calendar",
       },
     ],
   },
   {
-    title: "Ecosystem Management",
+    title: "rejected-ideas",
     items: [
       {
-        title: "Idea Management",
-        href: "/admin/dashboard/idea-managment",
-        icon: "Calendar",
+        title: "Rejected Ideas",
+        href: "/admin/dashboard/rejected-idea",
+        icon: "ClipboardList",
       },
+    ],
+  },
+  // {
+  //   title: "Approved Ideas",
+  //   items: [
+  //     {
+  //       title: "Approved Ideas",
+  //       href: "/admin/dashboard/selected-idea",
+  //       icon: "Calendar",
+  //     },
+  //   ],
+  // },
+  {
+    title: "Under Review Ideas",
+    items: [
       {
-        title: "User Management",
-        href: "/admin/dashboard/user-mangment",
-        icon: "Clock",
+        title: "Under Review Ideas",
+        href: "/admin/dashboard/under-review-idea",
+        icon: "FileText",
       },
-      //   {
-      //     title: "Specialties",
-      //     href: "/admin/dashboard/specialties-management",
-      //     icon: "Hospital",
-      //   },
-      //   {
-      //     title: "Doctor Schedules",
-      //     href: "/admin/dashboard/doctor-schedules-managament",
-      //     icon: "CalendarClock",
-      //   },
-      //   {
-      //     title: "Doctor Specialties",
-      //     href: "/admin/dashboard/doctor-specialties-management",
-      //     icon: "Stethoscope",
-      //   },
+    ],
+  },
+  {
+    title: "Payment Managment",
+    items: [
       {
         title: "Payments",
         href: "/admin/dashboard/payment-managment",
         icon: "CreditCard",
       },
-
-      //   {
-      //     title: "Prescriptions",
-      //     href: "/admin/dashboard/prescriptions-management",
-      //     icon: "FileText",
-      //   },
-      //   {
-      //     title: "Reviews",
-      //     href: "/admin/dashboard/reviews-management",
-      //     icon: "Star",
-      //   },
+    ],
+  },
+  {
+    title: "User Management",
+    items: [
+      {
+        title: "User Management",
+        href: "/admin/dashboard/user-mangment",
+        icon: "Clock",
+      },
     ],
   },
 ];
