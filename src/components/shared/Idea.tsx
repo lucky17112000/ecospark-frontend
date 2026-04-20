@@ -34,6 +34,17 @@ const DEFAULT_IDEA_IMAGE = "/window.svg";
 
 type ImageLike = string | { url?: unknown };
 
+type VoteLike = string | { type?: unknown };
+
+const getVoteType = (vote: VoteLike): "UP" | "DOWN" | null => {
+  if (vote === "UP" || vote === "DOWN") return vote;
+  if (vote && typeof vote === "object") {
+    const maybeType = (vote as { type?: unknown }).type;
+    return maybeType === "UP" || maybeType === "DOWN" ? maybeType : null;
+  }
+  return null;
+};
+
 const normalizeImageUrls = (images: unknown): string[] => {
   if (!Array.isArray(images)) return [];
 
@@ -82,7 +93,14 @@ const AllIdeas = () => {
     queryKey: ["idea"],
     queryFn: getIdea,
   });
-  console.log("Fetched ideas:", data?.meta);
+  // console.log(
+  //   "Fetched ideas:",
+  //   data?.data.map((idea: any) => ({
+  //     vote: idea?.votes?.length,
+  //     id: idea?.id,
+  //   })),
+  // );
+  console.log("Fetched ideas:", data?.data);
 
   const ideas = useMemo(() => {
     return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
@@ -135,6 +153,17 @@ const AllIdeas = () => {
             const authorName =
               idea?.author?.name || idea?.authorName || "Unknown";
             const createdAt = safeFormatDate(idea?.createdAt);
+
+            const votes = Array.isArray(idea?.votes)
+              ? (idea.votes as unknown as VoteLike[])
+              : [];
+            const totalVotes = votes.length;
+            const upVotes = votes.reduce((acc, vote) => {
+              return acc + (getVoteType(vote) === "UP" ? 1 : 0);
+            }, 0);
+            const downVotes = votes.reduce((acc, vote) => {
+              return acc + (getVoteType(vote) === "DOWN" ? 1 : 0);
+            }, 0);
 
             return (
               <Card
@@ -198,36 +227,46 @@ const AllIdeas = () => {
                   </div>
                 </CardContent>
 
-                <CardFooter className="justify-between gap-3">
-                  <div className="text-xs text-muted-foreground">
-                    {idea?.isPaid ? (
-                      <span>
-                        Paid idea
-                        {typeof idea?.price === "number" ? (
-                          <> • ${idea.price}</>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span>Free idea</span>
-                    )}
+                <CardFooter className="flex-col items-stretch gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs text-muted-foreground">
+                      {idea?.isPaid ? (
+                        <span>
+                          Paid idea
+                          {typeof idea?.price === "number" ? (
+                            <> • ${idea.price}</>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span>Free idea</span>
+                      )}
+                    </div>
+
+                    <Button
+                      variant={idea?.isPaid ? "destructive" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        if (idea?.isPaid) {
+                          router.push(
+                            `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
+                          );
+                          return;
+                        }
+                        setSelectedIdea(idea);
+                        setDrawerOpen(true);
+                      }}
+                    >
+                      {idea?.isPaid ? "See more (Pay)" : "See more"}
+                    </Button>
                   </div>
 
-                  <Button
-                    variant={idea?.isPaid ? "destructive" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      if (idea?.isPaid) {
-                        router.push(
-                          `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
-                        );
-                        return;
-                      }
-                      setSelectedIdea(idea);
-                      setDrawerOpen(true);
-                    }}
-                  >
-                    {idea?.isPaid ? "See more (Pay)" : "See more"}
-                  </Button>
+                  <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>Total votes: {totalVotes}</span>
+                    <div className="flex items-center gap-3">
+                      <span>Up: {upVotes}</span>
+                      <span>Down: {downVotes}</span>
+                    </div>
+                  </div>
                 </CardFooter>
               </Card>
             );

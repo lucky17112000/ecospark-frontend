@@ -178,3 +178,69 @@ export const ideaUpdatebyAdminAction = async (payload: any) => {
     throw error;
   }
 };
+// export const deleteIdea = async (id: string): Promise<ApiResponse<unknown>> => {
+//   try {
+//     if (!id?.trim()) throw new Error("Missing id");
+//     return await httpClient.delete<unknown>(`/idea/soft`, {
+//       params: { id },
+//     });
+//   } catch (error) {
+//     console.error("Error deleting idea:", error);
+//     throw error;
+//   }
+// };
+
+export const getIdeatestvaia = async (): Promise<
+  ApiResponse<IIdeaResponse[]>
+> => {
+  try {
+    const url =
+      typeof window === "undefined" && API_BASE_URL
+        ? `${API_BASE_URL}/idea`
+        : "/api/ideas"; // Next.js API proxy: src/app/api/ideas/route.ts
+
+    const res = await fetch(url, { method: "GET", cache: "no-store" });
+    return (await res.json()) as ApiResponse<IIdeaResponse[]>;
+  } catch (error) {
+    console.error("Error fetching ideas:", error);
+    throw error;
+  }
+};
+
+type DeleteByAdminPayload = { id: string };
+
+export const softDeleteIdeaByAdminAction = async (
+  payload: DeleteByAdminPayload,
+): Promise<ApiResponse<unknown>> => {
+  if (!payload?.id?.trim()) throw new Error("Missing id");
+
+  const res = await fetch("/api/v1/idea/soft/by-admin", {
+    method: "DELETE",
+    body: JSON.stringify({ id: payload.id }),
+    credentials: "include",
+    cache: "no-store",
+    headers: {
+      "content-type": "application/json",
+    },
+  });
+
+  const text = await res.text();
+  const parsed = (() => {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      return null;
+    }
+  })();
+
+  if (!res.ok) {
+    const msg =
+      parsed && typeof parsed === "object" && "message" in (parsed as any)
+        ? String((parsed as any).message)
+        : text.trim() || `Failed (status ${res.status})`;
+    throw new Error(msg);
+  }
+
+  if (!parsed) throw new Error("Unexpected response from server");
+  return parsed as ApiResponse<unknown>;
+};

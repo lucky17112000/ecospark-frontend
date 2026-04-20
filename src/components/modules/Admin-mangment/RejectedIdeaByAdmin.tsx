@@ -1,8 +1,8 @@
 "use client";
 
 // import { deleteIdea, getIdea } from "@/services/idea.services";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
 import {
@@ -33,11 +33,49 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
-import { getIdeatestvaia } from "@/services/idea.services";
-import { useForm } from "@tanstack/react-form";
+import { Loader2, X } from "lucide-react";
+import {
+  getIdeatestvaia,
+  softDeleteIdeaByAdminAction,
+} from "@/services/idea.services";
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
+
+const SOFT_DELETED_STORAGE_KEY = "ecospark:softDeletedIdeaIds";
+const SOFT_DELETE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+type SoftDeletedMap = Record<string, number>; // id -> deletedAt (ms)
+
+const loadSoftDeletedMap = (): SoftDeletedMap => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(SOFT_DELETED_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") return {};
+    const record = parsed as Record<string, unknown>;
+    const now = Date.now();
+
+    const next: SoftDeletedMap = {};
+    for (const [id, ts] of Object.entries(record)) {
+      const n = typeof ts === "number" ? ts : Number(ts);
+      if (!Number.isFinite(n)) continue;
+      if (now - n < SOFT_DELETE_TTL_MS) next[id] = n;
+    }
+    return next;
+  } catch {
+    return {};
+  }
+};
+
+const saveSoftDeletedMap = (map: SoftDeletedMap) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(SOFT_DELETED_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // ignore storage failures
+  }
+};
 
 type ImageLike = string | { url?: unknown };
 
@@ -155,26 +193,31 @@ const parseFeedback = (feedback: FeedbackLike) => {
   return [{ message: trimmed, reason: "" }];
 };
 
-const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
+const RejectedIdeaByAdmin = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [openFeedbackIdeaId, setOpenFeedbackIdeaId] = useState<string | null>(
     null,
   );
-  const grapIdClick = async (id: string) => {
-    // await deleteIdea(id);
-  };
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletedIdeaIds, setDeletedIdeaIds] = useState<SoftDeletedMap>({});
 
-  const userId =
-    typeof user?.id === "string"
-      ? user.id
-      : typeof user?.data?.id === "string"
-        ? user.data.id
-        : typeof user?.user?.id === "string"
-          ? user.user.id
-          : "";
+  useEffect(() => {
+    const initial = loadSoftDeletedMap();
+    setDeletedIdeaIds(initial);
+    saveSoftDeletedMap(initial);
+
+    const interval = window.setInterval(() => {
+      const refreshed = loadSoftDeletedMap();
+      setDeletedIdeaIds(refreshed);
+      saveSoftDeletedMap(refreshed);
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   const { data } = useQuery({
     queryKey: ["idea"],
@@ -185,6 +228,34 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
   //   queryKey: ["deleteIdea"],
   //   queryFn: deleteIdea,
   // });
+
+  const { mutateAsync: softDeleteMutate, isPending: isDeleting } = useMutation({
+    mutationFn: (payload: { id: string }) =>
+      softDeleteIdeaByAdminAction(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["idea"] });
+    },
+  });
+
+  const handleSoftDelete = async (id: string) => {
+    if (!id?.trim()) return;
+    if (isDeleting) return;
+    const existingTs = deletedIdeaIds[id];
+    if (existingTs && Date.now() - existingTs < SOFT_DELETE_TTL_MS) return;
+    try {
+      setDeletingId(id);
+      await softDeleteMutate({ id });
+      setDeletedIdeaIds((prev) => {
+        const next = { ...prev, [id]: Date.now() };
+        saveSoftDeletedMap(next);
+        return next;
+      });
+    } catch (error) {
+      console.error("Error soft-deleting idea:", error);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   // const { mutateAsync: deleteIdeaMutate } = useMutation({
   //   mutationFn: (id: string) => deleteIdea(id),
@@ -205,15 +276,8 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
   }, [data]);
 
   const rejectedIdeas = useMemo(() => {
-    return ideas.filter((idea) => {
-      const matchesStatus = idea?.status === "REJECTED";
-      if (!matchesStatus) return false;
-
-      // If parent passes user id, scope to that user's ideas
-      if (!userId) return true;
-      return idea?.authorId === userId || idea?.author?.id === userId;
-    });
-  }, [ideas, userId]);
+    return ideas.filter((idea) => idea?.status === "REJECTED");
+  }, [ideas]);
 
   const selectedFeedback = useMemo(() => {
     return parseFeedback(selectedIdea?.feedback as FeedbackLike);
@@ -258,6 +322,12 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
           {rejectedIdeas.map((idea) => {
             const imageUrls = normalizeImageUrls(idea?.images);
             const coverImage = pickImage(imageUrls, 0);
+            const ideaId = String(idea?.id ?? "");
+            const isThisDeleting = isDeleting && deletingId === ideaId;
+            const deletedAt = ideaId ? deletedIdeaIds[ideaId] : undefined;
+            const isAlreadyDeleted = Boolean(
+              deletedAt && Date.now() - deletedAt < SOFT_DELETE_TTL_MS,
+            );
 
             const authorName =
               idea?.author?.name || idea?.authorName || "Unknown";
@@ -392,37 +462,84 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
                   })()}
                 </CardContent>
 
-                <CardFooter className="justify-between gap-3">
-                  <div className="text-xs text-muted-foreground">
-                    {idea?.isPaid ? (
-                      <span>
-                        Paid idea
-                        {typeof idea?.price === "number" ? (
-                          <> • ${idea.price}</>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span>Free idea</span>
-                    )}
+                <CardFooter className="flex flex-col items-stretch gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs text-muted-foreground">
+                      {idea?.isPaid ? (
+                        <span>
+                          Paid idea
+                          {typeof idea?.price === "number" ? (
+                            <> • ${idea.price}</>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span>Free idea</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={idea?.isPaid ? "destructive" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (idea?.isPaid) {
+                            router.push(
+                              `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
+                            );
+                            return;
+                          }
+                          setSelectedIdea(idea);
+                          setFeedbackOpen(false);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {idea?.isPaid ? "See more (Pay)" : "See more"}
+                      </Button>
+                      {/* <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedIdea(idea);
+                          setFeedbackOpen(false);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        View Details
+                      </Button> */}
+                    </div>
                   </div>
 
-                  <Button
-                    variant={idea?.isPaid ? "destructive" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      if (idea?.isPaid) {
-                        router.push(
-                          `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
-                        );
-                        return;
-                      }
-                      setSelectedIdea(idea);
-                      setFeedbackOpen(false);
-                      setDrawerOpen(true);
-                    }}
-                  >
-                    {idea?.isPaid ? "See more (Pay)" : "See more"}
-                  </Button>
+                  {isAlreadyDeleted ? (
+                    <div className="rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground/80">Deleted</p>
+                      <p>This idea will be removed after 1 hour.</p>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="self-end"
+                      disabled={isDeleting || !ideaId}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void handleSoftDelete(ideaId);
+                      }}
+                    >
+                      {isThisDeleting ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2
+                            className="h-4 w-4 animate-spin"
+                            aria-hidden="true"
+                          />
+                          Deleting...
+                        </span>
+                      ) : (
+                        "Delete"
+                      )}
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             );
@@ -631,4 +748,4 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
   );
 };
 
-export default RejectedIdeaPage;
+export default RejectedIdeaByAdmin;

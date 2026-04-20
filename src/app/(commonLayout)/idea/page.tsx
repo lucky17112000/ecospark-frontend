@@ -15,6 +15,11 @@ const ideaPage = async () => {
     queryKey: ["idea"],
     queryFn: getIdea,
   });
+  // const quryClient2 = new QueryClient();
+  // // await quryClient2.prefetchQuery({
+  // //   queryKey: ["deleteIdea"],
+  // //   queryFn: deleteIdea,
+  // // });
 
   return (
     // <HydrationBoundary state={dehydrate(queryClient)}>

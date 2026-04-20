@@ -1,7 +1,8 @@
+import RejectedIdeaByAdmin from "@/components/modules/Admin-mangment/RejectedIdeaByAdmin";
 import React from "react";
 
 const AdminRejectedIdeaPage = () => {
-  return <div>rrejected idea page for admin</div>;
+  return <RejectedIdeaByAdmin />;
 };
 
 export default AdminRejectedIdeaPage;

@@ -71,6 +71,23 @@ const httpGet = async <TData>(
 };
 
 //!SECTION for post
+// const httpPost = async <TData>(
+//   endpoint: string,
+//   data: unknown,
+//   options?: ApiRequestResponse,
+// ): Promise<ApiResponse<TData>> => {
+//   try {
+//     const instance = await axiosInstance();
+//     const response = await instance.post<ApiResponse<TData>>(endpoint, data, {
+//       params: options?.params,
+//       headers: options?.headers,
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("HTTP POST request failed:", error);
+//     throw error;
+//   }
+// };
 const httpPost = async <TData>(
   endpoint: string,
   data: unknown,
