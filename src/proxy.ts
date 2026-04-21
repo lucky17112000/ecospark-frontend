@@ -8,6 +8,21 @@ import {
 } from "./lib/authUtiles";
 import { log } from "console";
 import { access } from "fs";
+import { getNewTokenWithRefreshToken } from "./services/auth.service";
+import { isTokenExpiredSoon } from "./lib/token.utiles";
+async function refreshTokenMiddlware(refreshToken: string): Promise<boolean> {
+  try {
+    const refresh = await getNewTokenWithRefreshToken(refreshToken);
+    if (!refresh) {
+      console.error("Failed to refresh token in middleware");
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("Error refreshing token in middleware:", error);
+    return false;
+  }
+}
 
 export async function proxy(request: NextRequest) {
   try {
@@ -39,6 +54,34 @@ export async function proxy(request: NextRequest) {
     const unifySuperAdminRole = role === "SUPER_ADMIN" ? "ADMIN" : role;
     role = unifySuperAdminRole as UserRole;
     const isAuth = isAuthRoute(pathname);
+
+    //proactivly refresh toekn if it's about to e
+    if (
+      isValidAccessToken &&
+      accessToken &&
+      refreshToken &&
+      (await isTokenExpiredSoon(accessToken))
+    ) {
+      const requestHeader = new Headers(request.headers);
+      const response = NextResponse.next({
+        request: { headers: requestHeader },
+      });
+
+      try {
+        const refreshed = await refreshTokenMiddlware(refreshToken);
+        if (refreshed) {
+          requestHeader.set("x-token-refreshed", "1");
+        }
+        return NextResponse.next({
+          request: { headers: requestHeader },
+          headers: response.headers,
+        });
+      } catch (error) {
+        console.error("Error refreshing token in middleware:", error);
+      }
+      return response;
+    }
+
     if (isAuth && isValidAccessToken && role) {
       return NextResponse.redirect(
         new URL(getDashboardRoute(role as UserRole), request.url),

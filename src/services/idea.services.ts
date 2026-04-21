@@ -1,3 +1,4 @@
+"use server";
 import { httpClient } from "@/lib/axios/httpClient";
 import type { ApiResponse } from "@/types/api.types";
 import type { IIdeaResponse } from "@/types/idea.type";
@@ -8,15 +9,24 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// export const getIdea = async (): Promise<ApiResponse<IIdeaResponse[]>> => {
+//   try {
+//     const url =
+//       typeof window === "undefined" && API_BASE_URL
+//         ? `${API_BASE_URL}/idea`
+//         : "/api/ideas"; // Next.js API proxy: src/app/api/ideas/route.ts
+
+//     const res = await fetch(url, { method: "GET", cache: "no-store" });
+//     return (await res.json()) as ApiResponse<IIdeaResponse[]>;
+//   } catch (error) {
+//     console.error("Error fetching ideas:", error);
+//     throw error;
+//   }
+// };
 export const getIdea = async (): Promise<ApiResponse<IIdeaResponse[]>> => {
   try {
-    const url =
-      typeof window === "undefined" && API_BASE_URL
-        ? `${API_BASE_URL}/idea`
-        : "/api/ideas"; // Next.js API proxy: src/app/api/ideas/route.ts
-
-    const res = await fetch(url, { method: "GET", cache: "no-store" });
-    return (await res.json()) as ApiResponse<IIdeaResponse[]>;
+    const response = await httpClient.get("/idea");
+    return response.data as ApiResponse<IIdeaResponse[]>;
   } catch (error) {
     console.error("Error fetching ideas:", error);
     throw error;
@@ -243,4 +253,8 @@ export const softDeleteIdeaByAdminAction = async (
 
   if (!parsed) throw new Error("Unexpected response from server");
   return parsed as ApiResponse<unknown>;
+};
+export const getIdea2 = async () => {
+  const idea = await httpClient.get("/idea");
+  return idea;
 };

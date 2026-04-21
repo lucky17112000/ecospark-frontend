@@ -1,28 +1,33 @@
 import { ApiResponse } from "@/types/api.types";
 import axios from "axios";
+// import { isTokenExpiredSoon } from "../tokenUtiles";
+import { cookies, headers } from "next/headers";
+import { isTokenExpiredSoon } from "../token.utiles";
+import { getNewTokenWithRefreshToken } from "@/services/auth.service";
+// import { getNewTokenWithRefreshToken } from "@/services/auth.services";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL is not defined");
 }
 const axiosInstance = async () => {
-  //   const cookieStore = await cookies();
-  //   const accessToken = cookieStore.get("accessToken")?.value;
-  //   const refreshToken = cookieStore.get("refreshToken")?.value;
-  //   if (accessToken && refreshToken) {
-  //     await tryRefreshToken(accessToken, refreshToken);
-  //   }
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const refreshToken = cookieStore.get("refreshToken")?.value;
+  if (accessToken && refreshToken) {
+    await tryRefreshToken(accessToken, refreshToken);
+  }
 
-  //   const cookieHeader = cookieStore
-  //     .getAll()
-  //     .map((cookie) => `${cookie.name}=${cookie.value}`)
-  //     .join("; ");
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
   const baseHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  //   if (cookieHeader) {
-  //     baseHeaders.Cookie = cookieHeader;
-  //   }
+  if (cookieHeader) {
+    baseHeaders.Cookie = cookieHeader;
+  }
   //eg: cookie: "accessToken=abc123; refreshToken=def456"
   const instance = axios.create({
     baseURL: API_BASE_URL,
@@ -32,23 +37,23 @@ const axiosInstance = async () => {
   return instance;
 };
 
-// async function tryRefreshToken(
-//   accessToken: string,
-//   refreshToken: string,
-// ): Promise<void> {
-//   if (!(await isTokenExpiredSoon(accessToken))) {
-//     return;
-//   }
-//   const requestHeader = await headers();
-//   if (requestHeader.get("x-token-refreshed") === "1") {
-//     return;
-//   }
-//   try {
-//     await getNewTokenWithRefreshToken(refreshToken);
-//   } catch (error) {
-//     console.error("Error refreshing token:", error);
-//   }
-// }
+async function tryRefreshToken(
+  accessToken: string,
+  refreshToken: string,
+): Promise<void> {
+  if (!(await isTokenExpiredSoon(accessToken))) {
+    return;
+  }
+  const requestHeader = await headers();
+  if (requestHeader.get("x-token-refreshed") === "1") {
+    return;
+  }
+  try {
+    await getNewTokenWithRefreshToken(refreshToken);
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+  }
+}
 export interface ApiRequestResponse {
   params?: Record<string, unknown>;
   headers?: Record<string, string>;
@@ -71,23 +76,6 @@ const httpGet = async <TData>(
 };
 
 //!SECTION for post
-// const httpPost = async <TData>(
-//   endpoint: string,
-//   data: unknown,
-//   options?: ApiRequestResponse,
-// ): Promise<ApiResponse<TData>> => {
-//   try {
-//     const instance = await axiosInstance();
-//     const response = await instance.post<ApiResponse<TData>>(endpoint, data, {
-//       params: options?.params,
-//       headers: options?.headers,
-//     });
-//     return response.data;
-//   } catch (error) {
-//     console.error("HTTP POST request failed:", error);
-//     throw error;
-//   }
-// };
 const httpPost = async <TData>(
   endpoint: string,
   data: unknown,

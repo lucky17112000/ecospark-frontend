@@ -1,7 +1,16 @@
-import React from "react";
+"use server";
+import { getIdea2 } from "@/services/idea.services";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 
-const frorgotPasswordPage = () => {
-  return <div>forgot password form</div>;
+import ChangePassword from "../change-password/page";
+
+const frorgotPasswordPage = async () => {
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: ["idea"],
+    queryFn: getIdea2,
+  });
+  return <ChangePassword />;
 };
 
 export default frorgotPasswordPage;

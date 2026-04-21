@@ -168,3 +168,37 @@ export async function getUserInfo() {
   const { data } = await res.json();
   return data;
 }
+
+export async function getNewTokenWithRefreshToken(
+  refreshToken: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE_API_URL}/auth/refresh-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        cookie: `refreshToken=${refreshToken}`,
+      },
+      // body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) {
+      console.error("Token refresh failed with status:", res.status);
+      return false;
+    }
+    const { data } = await res.json();
+    const { accessToken, refreshToken: newRefreshToken, token } = data;
+    if (accessToken) {
+      await setTokenInCookie("accessToken", accessToken);
+    }
+    if (newRefreshToken) {
+      await setTokenInCookie("refreshToken", newRefreshToken);
+    }
+    if (token) {
+      await setTokenInCookie("better-auth.session_token", token, 24 * 60 * 60); // 1 day
+    }
+    return true;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    return false;
+  }
+}
