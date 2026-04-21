@@ -90,7 +90,15 @@ const httpPost = async <TData>(
     });
     return response.data;
   } catch (error) {
-    console.error("HTTP POST request failed:", error);
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const url = `${error.config?.baseURL ?? ""}${error.config?.url ?? endpoint}`;
+      console.error(
+        `HTTP POST request failed${status ? ` (status ${status})` : ""}: ${url} - ${error.message}`,
+      );
+    } else {
+      console.error("HTTP POST request failed:", error);
+    }
     throw error;
   }
 };

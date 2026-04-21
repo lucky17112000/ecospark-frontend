@@ -217,13 +217,14 @@ export type ChangePasswordPayload = {
 };
 export const changePasswordAction = async (
   payload: ChangePasswordPayload,
-): Promise<Promise<unknown>> => {
+): Promise<ApiResponse<unknown>> => {
   try {
     const resposne = await httpClient.post("/auth/change-password", payload);
     if (!resposne.success) {
       return {
         success: false,
         message: resposne.message || "Change password failed",
+        data: null,
       };
     }
     return resposne;
@@ -232,6 +233,42 @@ export const changePasswordAction = async (
     return {
       success: false,
       message: "Change password failed",
+      data: null,
+    };
+  }
+};
+export type ForgotPasswordPayload = {
+  email: string;
+};
+
+export const forgotPasswordAction = async (
+  payload: ForgotPasswordPayload,
+): Promise<ApiResponse<unknown>> => {
+  try {
+    const resposne = await httpClient.post("/auth/forget-password", payload);
+    if (!resposne.success) {
+      return {
+        success: false,
+        message: resposne.message || "Forgot password request failed",
+        data: null,
+      };
+    }
+    return resposne;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.code === "ECONNREFUSED") {
+      return {
+        success: false,
+        message:
+          "API server is not reachable (ECONNREFUSED). Start ecospark-backend or check NEXT_PUBLIC_API_BASE_URL.",
+        data: null,
+      };
+    }
+
+    console.error("Forgot password request failed:", error);
+    return {
+      success: false,
+      message: "Forgot password request failed",
+      data: null,
     };
   }
 };

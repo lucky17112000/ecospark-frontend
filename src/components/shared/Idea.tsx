@@ -2,7 +2,7 @@
 
 import { getIdea } from "@/services/idea.services";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
 import {
@@ -45,6 +45,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "../ui/pagination";
+
+//!SECTIONpagination
+type pageItem = number | "ellipsis";
+const getPaginationItems = (currentPage: number, totalPages: number) => {
+  const safeTotal = Math.max(1, totalPages);
+  const safeCurrent = Math.min(Math.max(1, currentPage), safeTotal);
+  if (safeTotal <= 7) {
+    return Array.from({ length: safeTotal }, (_, idx) => idx + 1) as pageItem[];
+  }
+
+  const items: pageItem[] = [1];
+
+  const left = Math.max(2, safeCurrent - 1);
+  const right = Math.min(safeTotal - 1, safeCurrent + 1);
+
+  if (left > 2) items.push("ellipsis");
+  for (let p = left; p <= right; p += 1) items.push(p);
+  if (right < safeTotal - 1) items.push("ellipsis");
+
+  items.push(safeTotal);
+  return items;
+};
+//!SECTIONpagination
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
 
@@ -131,6 +163,8 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(3);
 
   const userId =
     user &&
@@ -150,8 +184,8 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
         : "";
 
   const { data } = useQuery({
-    queryKey: ["idea"],
-    queryFn: getIdea,
+    queryKey: ["idea", page, limit],
+    queryFn: () => getIdea({ page, limit }),
   });
   // console.log(
   //   "Fetched ideas:",
@@ -160,7 +194,30 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
   //     id: idea?.id,
   //   })),
   // );
-  // console.log("Fetched ideas:", data?.data);
+  // console.log("Fetched ideas:", data?.meta);
+  //!SECTION pagination
+  const meta = data?.meta;
+  const totalPages = Math.max(1, meta?.totalPages ?? 1);
+  const currentPage = Math.min(Math.max(1, meta?.page ?? page), totalPages);
+  const totalItems = meta?.total ?? undefined;
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, totalPages]);
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+  const paginationItems = useMemo(() => {
+    return getPaginationItems(currentPage, totalPages);
+  }, [currentPage, totalPages]);
+  const showingRange = useMemo(() => {
+    if (typeof totalItems !== "number") return null;
+    if (totalItems <= 0) return null;
+
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalItems);
+    return { start, end, total: totalItems };
+  }, [currentPage, limit, totalItems]);
+  //!SECTION pagination
   const { mutateAsync, isPending: isVoting } = useMutation({
     mutationFn: (payload: { ideaId: string; voteType: "UP" | "DOWN" }) =>
       castVote(payload),
@@ -617,6 +674,74 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
           </div>
         ) : null} */}
       </div>
+      {totalPages > 1 ? (
+        <div className="mt-8 space-y-2">
+          {showingRange ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Showing {showingRange.start}–{showingRange.end} of{" "}
+              {showingRange.total}
+            </p>
+          ) : null}
+
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  aria-disabled={!canGoPrev}
+                  className={!canGoPrev ? "pointer-events-none opacity-50" : ""}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!canGoPrev) return;
+                    setPage((p) => Math.max(1, p - 1));
+                  }}
+                />
+              </PaginationItem>
+
+              {paginationItems.map((item, idx) => {
+                if (item === "ellipsis") {
+                  return (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  );
+                }
+
+                const pageNumber = item;
+
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      href="#"
+                      isActive={pageNumber === currentPage}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (pageNumber === currentPage) return;
+                        setPage(pageNumber);
+                      }}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  aria-disabled={!canGoNext}
+                  className={!canGoNext ? "pointer-events-none opacity-50" : ""}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!canGoNext) return;
+                    setPage((p) => Math.min(totalPages, p + 1));
+                  }}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      ) : null}
     </div>
   );
 };

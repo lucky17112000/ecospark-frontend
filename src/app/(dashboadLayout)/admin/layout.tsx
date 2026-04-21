@@ -9,7 +9,7 @@ export default function AdminDashBoardLayout({
 }>) {
   return (
     <>
-      Admin Layout
+      {/* Admin Layout */}
       {children}
     </>
   );

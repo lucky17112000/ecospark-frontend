@@ -24,9 +24,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 //     throw error;
 //   }
 // };
-export const getIdea = async (): Promise<ApiResponse<IIdeaResponse[]>> => {
+export type GetIdeaParams = {
+  page?: number;
+  limit?: number;
+  status?: string;
+};
+export const getIdea = async (
+  params?: GetIdeaParams,
+): Promise<ApiResponse<IIdeaResponse[]>> => {
   try {
-    const response = await httpClient.get<IIdeaResponse[]>("/idea");
+    const response = await httpClient.get<IIdeaResponse[]>("/idea", { params });
     return response;
   } catch (error) {
     console.error("Error fetching ideas:", error);

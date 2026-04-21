@@ -2,7 +2,7 @@ export type UserRole = "ADMIN" | "USER" | "GUEST" | "SUPER_ADMIN";
 export const authRoutes = [
   "/login",
   "/register",
-  "/forgot-password",
+  // "/forgot-password",
   "/reset-password",
 ] as const;
 
