@@ -34,8 +34,9 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { getIdeatestvaia } from "@/services/idea.services";
+// import { getIdeatestvaia } from "@/services/idea.services";
 import { useForm } from "@tanstack/react-form";
+import { getIdea } from "@/services/idea.services";
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
 
@@ -178,7 +179,7 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
 
   const { data } = useQuery({
     queryKey: ["idea"],
-    queryFn: getIdeatestvaia,
+    queryFn: getIdea,
   });
   // console.log("Fetched ideas data:", data?.data);
   // const { data: deleteIdeaData } = useQuery({

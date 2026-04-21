@@ -2,6 +2,7 @@
 import { httpClient } from "@/lib/axios/httpClient";
 import type { ApiResponse } from "@/types/api.types";
 import type { IIdeaResponse } from "@/types/idea.type";
+import { cookies } from "next/headers";
 import {
   createIdeaFormZodSchema,
   ICreateIdeaFormInput,
@@ -25,8 +26,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // };
 export const getIdea = async (): Promise<ApiResponse<IIdeaResponse[]>> => {
   try {
-    const response = await httpClient.get("/idea");
-    return response.data as ApiResponse<IIdeaResponse[]>;
+    const response = await httpClient.get<IIdeaResponse[]>("/idea");
+    return response;
   } catch (error) {
     console.error("Error fetching ideas:", error);
     throw error;
@@ -149,40 +150,52 @@ export const createIdea = async (
     throw error;
   }
 };
-export const ideaUpdatebyAdminAction = async (payload: any) => {
+// export const ideaUpdatebyAdminAction = async (payload: any) => {
+//   try {
+//     const response = await fetch("/api/idea/status", {
+//       method: "PUT",
+//       headers: { "content-type": "application/json" },
+//       body: JSON.stringify(payload),
+//       credentials: "include",
+//     });
+
+//     const text = await response.text();
+//     const parsed = (() => {
+//       try {
+//         return JSON.parse(text) as unknown;
+//       } catch {
+//         return null;
+//       }
+//     })();
+
+//     if (!response.ok) {
+//       const messageFromBody =
+//         parsed && typeof parsed === "object"
+//           ? (parsed as { message?: unknown }).message
+//           : undefined;
+
+//       const message =
+//         typeof messageFromBody === "string" && messageFromBody.trim()
+//           ? messageFromBody.trim()
+//           : text.trim() || `Failed to update idea (status ${response.status})`;
+
+//       throw new Error(message);
+//     }
+
+//     if (!parsed) throw new Error("Unexpected response from server");
+//     return parsed as ApiResponse<unknown>;
+//   } catch (error) {
+//     console.error("Error updating idea:", error);
+//     throw error;
+//   }
+// };
+
+export const ideaUpdatebyAdminAction = async (
+  payload: any,
+): Promise<ApiResponse<unknown>> => {
   try {
-    const response = await fetch("/api/idea/status", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-      credentials: "include",
-    });
-
-    const text = await response.text();
-    const parsed = (() => {
-      try {
-        return JSON.parse(text) as unknown;
-      } catch {
-        return null;
-      }
-    })();
-
-    if (!response.ok) {
-      const messageFromBody =
-        parsed && typeof parsed === "object"
-          ? (parsed as { message?: unknown }).message
-          : undefined;
-
-      const message =
-        typeof messageFromBody === "string" && messageFromBody.trim()
-          ? messageFromBody.trim()
-          : text.trim() || `Failed to update idea (status ${response.status})`;
-
-      throw new Error(message);
-    }
-
-    if (!parsed) throw new Error("Unexpected response from server");
-    return parsed as ApiResponse<unknown>;
+    const response = await httpClient.put("/idea/status", payload);
+    return response;
   } catch (error) {
     console.error("Error updating idea:", error);
     throw error;
@@ -200,61 +213,93 @@ export const ideaUpdatebyAdminAction = async (payload: any) => {
 //   }
 // };
 
-export const getIdeatestvaia = async (): Promise<
-  ApiResponse<IIdeaResponse[]>
-> => {
-  try {
-    const url =
-      typeof window === "undefined" && API_BASE_URL
-        ? `${API_BASE_URL}/idea`
-        : "/api/ideas"; // Next.js API proxy: src/app/api/ideas/route.ts
+// export const getIdeatestvaia = async (): Promise<
+//   ApiResponse<IIdeaResponse[]>
+// > => {
+//   try {
+//     const url =
+//       typeof window === "undefined" && API_BASE_URL
+//         ? `${API_BASE_URL}/idea`
+//         : "/api/ideas"; // Next.js API proxy: src/app/api/ideas/route.ts
 
-    const res = await fetch(url, { method: "GET", cache: "no-store" });
-    return (await res.json()) as ApiResponse<IIdeaResponse[]>;
-  } catch (error) {
-    console.error("Error fetching ideas:", error);
-    throw error;
-  }
-};
+//     const res = await fetch(url, { method: "GET", cache: "no-store" });
+//     return (await res.json()) as ApiResponse<IIdeaResponse[]>;
+//   } catch (error) {
+//     console.error("Error fetching ideas:", error);
+//     throw error;
+//   }
+// };
 
 type DeleteByAdminPayload = { id: string };
+
+// export const softDeleteIdeaByAdminAction = async (
+//   payload: DeleteByAdminPayload,
+// ): Promise<ApiResponse<unknown>> => {
+//   if (!payload?.id?.trim()) throw new Error("Missing id");
+
+//   if (!API_BASE_URL) {
+//     throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
+//   }
+
+//   const cookieStore = await cookies();
+//   const cookieHeader = cookieStore
+//     .getAll()
+//     .map((cookie) => `${cookie.name}=${cookie.value}`)
+//     .join("; ");
+//   const accessToken = cookieStore.get("accessToken")?.value;
+
+//   const headers: Record<string, string> = {
+//     "content-type": "application/json",
+//   };
+//   if (cookieHeader) headers.cookie = cookieHeader;
+//   if (accessToken) headers.authorization = `Bearer ${accessToken}`;
+
+//   const url = new URL(
+//     "idea/soft/by-admin",
+//     API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`,
+//   );
+
+//   const res = await fetch(url.toString(), {
+//     method: "DELETE",
+//     body: JSON.stringify({ id: payload.id }),
+//     cache: "no-store",
+//     headers,
+//   });
+
+//   const text = await res.text();
+//   const parsed = (() => {
+//     try {
+//       return JSON.parse(text) as unknown;
+//     } catch {
+//       return null;
+//     }
+//   })();
+
+//   if (!res.ok) {
+//     const msg =
+//       parsed && typeof parsed === "object" && "message" in parsed
+//         ? String((parsed as { message?: unknown }).message)
+//         : text.trim() || `Failed (status ${res.status})`;
+//     throw new Error(msg);
+//   }
+
+//   if (!parsed) throw new Error("Unexpected response from server");
+//   return parsed as ApiResponse<unknown>;
+// };
 
 export const softDeleteIdeaByAdminAction = async (
   payload: DeleteByAdminPayload,
 ): Promise<ApiResponse<unknown>> => {
-  if (!payload?.id?.trim()) throw new Error("Missing id");
-
-  const res = await fetch("/api/v1/idea/soft/by-admin", {
-    method: "DELETE",
-    body: JSON.stringify({ id: payload.id }),
-    credentials: "include",
-    cache: "no-store",
-    headers: {
-      "content-type": "application/json",
-    },
-  });
-
-  const text = await res.text();
-  const parsed = (() => {
-    try {
-      return JSON.parse(text) as unknown;
-    } catch {
-      return null;
-    }
-  })();
-
-  if (!res.ok) {
-    const msg =
-      parsed && typeof parsed === "object" && "message" in (parsed as any)
-        ? String((parsed as any).message)
-        : text.trim() || `Failed (status ${res.status})`;
-    throw new Error(msg);
+  try {
+    if (!payload?.id?.trim()) throw new Error("Missing id");
+    return await httpClient.delete<unknown>("/idea/soft/by-admin", {
+      data: payload,
+    });
+  } catch (error) {
+    console.error("Error deleting idea:", error);
+    throw error;
   }
-
-  if (!parsed) throw new Error("Unexpected response from server");
-  return parsed as ApiResponse<unknown>;
 };
-export const getIdea2 = async () => {
-  const idea = await httpClient.get("/idea");
-  return idea;
-};
+// export const getIdea2 = async (payload: DeleteByAdminPayload): => {
+//   return await httpClient.get<IIdeaResponse[]>("/idea");
+// };

@@ -133,7 +133,9 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
   const queryClient = useQueryClient();
 
   const userId =
-    user && typeof user === "object" && "id" in (user as Record<string, unknown>)
+    user &&
+    typeof user === "object" &&
+    "id" in (user as Record<string, unknown>)
       ? String((user as Record<string, unknown>).id ?? "")
       : user &&
           typeof user === "object" &&
@@ -161,7 +163,7 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
   // console.log("Fetched ideas:", data?.data);
   const { mutateAsync, isPending: isVoting } = useMutation({
     mutationFn: (payload: { ideaId: string; voteType: "UP" | "DOWN" }) =>
-      castVote(payload.ideaId, payload.voteType),
+      castVote(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["idea"] });
     },
@@ -181,7 +183,10 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
 
     // Client-side duplicate prevention: if we can identify the current user
     // and the idea includes vote records, block duplicate requests.
-    if (userId && Array.isArray((idea as unknown as { votes?: unknown }).votes)) {
+    if (
+      userId &&
+      Array.isArray((idea as unknown as { votes?: unknown }).votes)
+    ) {
       const votes = (idea as unknown as { votes: unknown[] }).votes;
       const existing = votes.find((vote) => {
         const voteUserId = getVoteUserIdFromRecord(vote);

@@ -34,10 +34,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { Loader2, X } from "lucide-react";
-import {
-  getIdeatestvaia,
-  softDeleteIdeaByAdminAction,
-} from "@/services/idea.services";
+import { getIdea, softDeleteIdeaByAdminAction } from "@/services/idea.services";
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
 
@@ -221,7 +218,7 @@ const RejectedIdeaByAdmin = () => {
 
   const { data } = useQuery({
     queryKey: ["idea"],
-    queryFn: getIdeatestvaia,
+    queryFn: getIdea,
   });
   // console.log("Fetched ideas data:", data?.data);
   // const { data: deleteIdeaData } = useQuery({

@@ -57,6 +57,7 @@ async function tryRefreshToken(
 export interface ApiRequestResponse {
   params?: Record<string, unknown>;
   headers?: Record<string, string>;
+  data?: unknown;
 }
 const httpGet = async <TData>(
   endpoint: string,
@@ -120,6 +121,7 @@ const httpDelete = async <TData>(
     const instance = await axiosInstance();
 
     const response = await instance.delete<ApiResponse<TData>>(endpoint, {
+      data: options?.data,
       params: options?.params,
       headers: options?.headers,
     });
