@@ -9,7 +9,9 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 // ─── Google SVG Icon ──────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -64,6 +66,7 @@ const BrandMark = () => (
 const LoginForm = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const { mutateAsync } = useMutation({
     mutationFn: (payload: ILoginPayload) => loginAction(payload),
@@ -78,9 +81,27 @@ const LoginForm = () => {
       setServerError(null);
       try {
         const result = (await mutateAsync(value)) as any;
-        if (!result.success) {
-          setServerError(result.message || "Login failed. Please try again.");
+
+        if (!result?.success) {
+          setServerError(result?.message || "Login failed. Please try again.");
+          return;
         }
+
+        toast.success("Login successful");
+
+        const role = String(result?.data?.user?.role ?? "").toUpperCase();
+        const needPasswordChange = Boolean(
+          result?.data?.user?.needPasswordChange,
+        );
+
+        if (needPasswordChange) {
+          router.push("/change-password");
+          router.refresh();
+          return;
+        }
+
+        router.push(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
+        router.refresh();
       } catch (error: any) {
         console.error("Login error:", error);
         setServerError(

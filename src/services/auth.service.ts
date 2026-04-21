@@ -2,6 +2,7 @@
 import { httpClient } from "@/lib/axios/httpClient";
 import { setTokenInCookie } from "@/lib/token.utiles";
 import type { ApiErrorResponse } from "@/types/api.types";
+import type { ApiResponse } from "@/types/api.types";
 import { ILoginResponse, IRegisterResponse } from "@/types/auth.type";
 import {
   ILoginPayload,
@@ -27,7 +28,7 @@ if (!BASE_API_URL) {
 
 export const loginAction = async (
   payload: ILoginPayload,
-): Promise<ILoginResponse> => {
+): Promise<ApiResponse<ILoginResponse>> => {
   const parsedPayload = loginZodSchema.safeParse(payload);
   if (!parsedPayload.success) {
     console.error(
@@ -45,8 +46,8 @@ export const loginAction = async (
     await setTokenInCookie("accessToken", accessToken);
     await setTokenInCookie("refreshToken", refreshToken);
     await setTokenInCookie("better-auth.session_token", token);
-    // return response.data;
-    redirect("/dashboard");
+    return response;
+    // redirect("/dashboard");
   } catch (error) {
     console.error("Login failed:", error);
     throw error;
@@ -202,3 +203,35 @@ export async function getNewTokenWithRefreshToken(
     return false;
   }
 }
+
+/*
+export interface IChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+*/
+
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+export const changePasswordAction = async (
+  payload: ChangePasswordPayload,
+): Promise<Promise<unknown>> => {
+  try {
+    const resposne = await httpClient.post("/auth/change-password", payload);
+    if (!resposne.success) {
+      return {
+        success: false,
+        message: resposne.message || "Change password failed",
+      };
+    }
+    return resposne;
+  } catch (error) {
+    console.error("Change password failed:", error);
+    return {
+      success: false,
+      message: "Change password failed",
+    };
+  }
+};
