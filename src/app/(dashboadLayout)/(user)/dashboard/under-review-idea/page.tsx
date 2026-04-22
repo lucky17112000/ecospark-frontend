@@ -9,9 +9,11 @@ export const dynamic = "force-dynamic";
 
 const UnderReviewPage = async () => {
   const queryClient = new QueryClient();
+  const page = 0;
+  const limit = 3;
   await queryClient.prefetchQuery({
-    queryKey: ["idea"],
-    queryFn: getIdea,
+    queryKey: ["idea", page, limit],
+    queryFn: () => getIdea({ page, limit }),
   });
 
   const user = await getUserInfo();

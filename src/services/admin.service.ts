@@ -1,5 +1,6 @@
 "use server";
 import { httpClient } from "@/lib/axios/httpClient";
+import type { ApiResponse } from "@/types/api.types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export type getUserParams = {
@@ -8,11 +9,29 @@ export type getUserParams = {
   status?: string;
 };
 
+export type AdminUserCount = {
+  ideas?: number;
+  votes?: number;
+};
+
+export type AdminUser = {
+  id?: string;
+  name?: string;
+  email?: string;
+  status?: string;
+  role?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  emailVerified?: boolean;
+  _count?: AdminUserCount;
+};
+
 export const getAllUserByAdmiAction = async (
   params?: getUserParams,
-): Promise<unknown> => {
+): Promise<ApiResponse<AdminUser[]>> => {
   try {
-    const response = await httpClient.get<unknown>(
+    const response = await httpClient.get<AdminUser[]>(
       `${API_BASE_URL}/admin/users`,
       { params },
     );

@@ -5,7 +5,7 @@ import {
   updateUserRoleByAdminAction,
 } from "@/services/admin.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -23,6 +23,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 // import { map } from "zod";
 
 type UserCount = {
@@ -42,6 +51,29 @@ type UserRow = {
   emailVerified?: boolean;
   _count?: UserCount;
 };
+
+//pagination
+type pageItem = number | "ellipsis";
+const getPaginationItems = (currentPage: number, totalPages: number) => {
+  const safeTotal = Math.max(1, totalPages);
+  const safeCurrent = Math.min(Math.max(1, currentPage), safeTotal);
+  if (safeTotal <= 7) {
+    return Array.from({ length: safeTotal }, (_, idx) => idx + 1) as pageItem[];
+  }
+
+  const items: pageItem[] = [1];
+
+  const left = Math.max(2, safeCurrent - 1);
+  const right = Math.min(safeTotal - 1, safeCurrent + 1);
+
+  if (left > 2) items.push("ellipsis");
+  for (let p = left; p <= right; p += 1) items.push(p);
+  if (right < safeTotal - 1) items.push("ellipsis");
+
+  items.push(safeTotal);
+  return items;
+};
+//pagination
 
 type UserRole = "ADMIN" | "USER";
 
@@ -72,17 +104,16 @@ const safeDate = (value: unknown): string => {
 };
 
 const UserManagment = () => {
+  const [page, setPage] = useState(1);
+  const [limit] = useState(2);
   const queryClient = useQueryClient();
-  const page = 1;
-  const limit = 3;
   const { data, isLoading, isError } = useQuery({
     queryKey: ["users", page, limit],
     queryFn: () => getAllUserByAdmiAction({ page, limit }),
   });
 
   const users = useMemo(() => {
-    const rows = (data as unknown as { data?: unknown })?.data;
-    return Array.isArray(rows) ? (rows as UserRow[]) : ([] as UserRow[]);
+    return Array.isArray(data?.data) ? (data?.data as UserRow[]) : [];
   }, [data]);
   const { mutate: deleteUser, isPending: isDeleting } = useMutation({
     mutationFn: deleteUserByAdminAction,
@@ -104,6 +135,30 @@ const UserManagment = () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
+
+  //!SECTION pagination
+  const meta = data?.meta;
+  const totalPages = Math.max(1, meta?.totalPages ?? 1);
+  const currentPage = Math.min(Math.max(1, meta?.page ?? page), totalPages);
+  const totalItems = meta?.total ?? undefined;
+  useEffect(() => {
+    if (page !== currentPage) setPage(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, totalPages]);
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+  const paginationItems = useMemo(() => {
+    return getPaginationItems(currentPage, totalPages);
+  }, [currentPage, totalPages]);
+  const showingRange = useMemo(() => {
+    if (typeof totalItems !== "number") return null;
+    if (totalItems <= 0) return null;
+
+    const start = (currentPage - 1) * limit + 1;
+    const end = Math.min(currentPage * limit, totalItems);
+    return { start, end, total: totalItems };
+  }, [currentPage, limit, totalItems]);
+  //!SECTION pagination
 
   return (
     <Card className="shadow-sm transition-shadow hover:shadow-md">
@@ -250,6 +305,79 @@ const UserManagment = () => {
             </TableBody>
           </Table>
         )}
+
+        {totalPages > 1 && !isLoading && !isError && users.length > 0 ? (
+          <div className="pt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    aria-disabled={!canGoPrev}
+                    className={
+                      !canGoPrev ? "pointer-events-none opacity-50" : ""
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!canGoPrev) return;
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                  />
+                </PaginationItem>
+
+                {paginationItems.map((item, idx) => {
+                  if (item === "ellipsis") {
+                    return (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+                  }
+
+                  const pageNumber = item;
+
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        href="#"
+                        isActive={pageNumber === currentPage}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (pageNumber === currentPage) return;
+                          setPage(pageNumber);
+                        }}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    aria-disabled={!canGoNext}
+                    className={
+                      !canGoNext ? "pointer-events-none opacity-50" : ""
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!canGoNext) return;
+                      setPage((p) => Math.min(totalPages, p + 1));
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+
+            {showingRange ? (
+              <div className="mt-2 text-center text-xs text-muted-foreground">
+                Showing {showingRange.start}–{showingRange.end} of{" "}
+                {showingRange.total}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
