@@ -1,5 +1,6 @@
 "use client";
 
+import LogoutButton from "@/components/shared/LogoutButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { getIconComponent } from "@/lib/iconMapper";
@@ -96,6 +97,11 @@ const DashboardSidebarContent = ({
               {userInfo?.role?.toLocaleLowerCase().replace("_", " ")}
             </p>
           </div>
+          <Separator orientation="vertical" className="mx-2 h-6" />
+          <LogoutButton
+            className="text-red-600 hover:text-red-600"
+            redirectTo="/login"
+          />
         </div>
       </div>
     </div>

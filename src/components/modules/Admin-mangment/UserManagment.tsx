@@ -32,6 +32,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import AppTooltip from "@/components/shared/Tooltip";
 // import { map } from "zod";
 
 type UserCount = {
@@ -248,18 +249,24 @@ const UserManagment = () => {
                         <Badge variant="outline" className="capitalize">
                           {roleLabel}
                         </Badge>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="xs"
-                          disabled={!userId || rowLoading}
-                          onClick={() => {
-                            if (!userId) return;
-                            changeRole({ userId, role: nextRole });
-                          }}
-                        >
-                          {rowLoading ? "Changing..." : "Change role"}
-                        </Button>
+                        <AppTooltip
+                          side="top"
+                          content={`Change role to ${nextRole}`}
+                          trigger={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              disabled={!userId || rowLoading}
+                              onClick={() => {
+                                if (!userId) return;
+                                changeRole({ userId, role: nextRole });
+                              }}
+                            >
+                              {rowLoading ? "Changing..." : "Change role"}
+                            </Button>
+                          }
+                        />
                       </div>
                     </TableCell>
 
@@ -286,18 +293,24 @@ const UserManagment = () => {
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="xs"
-                        disabled={!userId || isDeleting}
-                        onClick={() => {
-                          if (!user.id) return;
-                          deleteUser({ userId: user.id });
-                        }}
-                      >
-                        Delete
-                      </Button>
+                      <AppTooltip
+                        side="top"
+                        content="Delete this user"
+                        trigger={
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="xs"
+                            disabled={!userId || isDeleting}
+                            onClick={() => {
+                              if (!user.id) return;
+                              deleteUser({ userId: user.id });
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 );

@@ -1,5 +1,6 @@
 "use server";
 import { httpClient } from "@/lib/axios/httpClient";
+import { deleteCookie } from "@/lib/cookie.utiles";
 import { setTokenInCookie } from "@/lib/token.utiles";
 import type { ApiErrorResponse } from "@/types/api.types";
 import type { ApiResponse } from "@/types/api.types";
@@ -271,4 +272,10 @@ export const forgotPasswordAction = async (
       data: null,
     };
   }
+};
+
+export const logoutAction = async () => {
+  await deleteCookie("accessToken");
+  await deleteCookie("refreshToken");
+  await deleteCookie("better-auth.session_token");
 };
