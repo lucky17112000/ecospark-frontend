@@ -2,7 +2,7 @@
 import { httpClient } from "@/lib/axios/httpClient";
 import type { ApiResponse } from "@/types/api.types";
 import type { IIdeaResponse } from "@/types/idea.type";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   createIdeaFormZodSchema,
   ICreateIdeaFormInput,
@@ -28,6 +28,7 @@ export type GetIdeaParams = {
   page?: number;
   limit?: number;
   status?: string;
+  searchTerm?: string;
 };
 export const getIdea = async (
   params?: GetIdeaParams,
@@ -78,10 +79,25 @@ export const createIdea = async (
       safeParse.data.images.forEach((file) => formData.append("files", file));
     }
 
-    const res = await fetch("/api/ideas", {
+    // Server Actions run on the server, where relative URLs like "/api/ideas" are invalid.
+    // Build an absolute URL to our Next.js route handler and forward cookies for auth.
+    const h = await headers();
+    const forwardedProto = h.get("x-forwarded-proto") ?? "http";
+    const forwardedHost = h.get("x-forwarded-host") ?? h.get("host");
+    const origin = forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : "http://localhost:3000";
+
+    const cookieStore = await cookies();
+    const cookieHeader = cookieStore
+      .getAll()
+      .map((c) => `${c.name}=${c.value}`)
+      .join("; ");
+
+    const res = await fetch(new URL("/api/ideas", origin), {
       method: "POST",
       body: formData,
-      credentials: "include",
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
     });
     // POST goes through Next.js API proxy: src/app/api/ideas/route.ts
 

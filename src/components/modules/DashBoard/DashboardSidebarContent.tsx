@@ -97,13 +97,13 @@ const DashboardSidebarContent = ({
               {userInfo?.role?.toLocaleLowerCase().replace("_", " ")}
             </p>
           </div>
-          <Separator orientation="vertical" className="mx-2 h-6" />
-          <LogoutButton
-            className="text-red-600 hover:text-red-600"
-            redirectTo="/login"
-          />
         </div>
       </div>
+      <Separator className="mx-2 h-6" />
+      <LogoutButton
+        className="text-red-600 hover:text-red-600"
+        redirectTo="/login"
+      />
     </div>
   );
 };

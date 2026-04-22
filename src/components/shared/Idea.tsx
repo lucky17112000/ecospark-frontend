@@ -27,8 +27,9 @@ import {
 } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { castVote } from "@/services/vote.service";
 import {
   DropdownMenu,
@@ -54,6 +55,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../ui/pagination";
+import { Input } from "../ui/input";
 
 //!SECTIONpagination
 type pageItem = number | "ellipsis";
@@ -153,18 +155,71 @@ const pickImage = (urls: string[], preferredIndex: number): string => {
   return urls[preferredIndex] || urls[0] || DEFAULT_IDEA_IMAGE;
 };
 
+const IdeaCardSkeleton = () => {
+  return (
+    <Card className="flex h-full flex-col overflow-hidden">
+      <Skeleton className="h-40 w-full rounded-none" />
+      <CardHeader className="gap-2 pb-3">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+      </CardHeader>
+      <CardContent className="flex-1 space-y-3 pb-3">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+        </div>
+      </CardContent>
+      <CardFooter className="mt-auto flex-col items-stretch gap-2 border-t pt-3">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-9 w-full" />
+      </CardFooter>
+    </Card>
+  );
+};
+
 const AllIdeas = ({ user }: { user?: unknown }) => {
   const [voteErrors, setVoteErrors] = useState<Record<string, string>>({});
   const [duplicateVoteDialog, setDuplicateVoteDialog] = useState<{
     open: boolean;
     message: string;
   }>({ open: false, message: "" });
+  //!SECTION for search
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    // Focus input after expand animation starts
+    const t = setTimeout(() => searchInputRef.current?.focus(), 120);
+    return () => clearTimeout(t);
+  }, [isSearchOpen]);
+
+  useEffect(() => {
+    //user টাইপ বন্ধ করলে 400ms পরে API hit হবে।
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchText.trim());
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchText]);
+  useEffect(() => {
+    //নতুন search এ সবসময় page 1 থেকে দেখানো ভালো।
+    setPage(1);
+  }, [debouncedSearch]);
+  //!SECTION for search
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(3);
+  const [limit] = useState(6);
 
   const userId =
     user &&
@@ -183,9 +238,10 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
           )
         : "";
 
-  const { data } = useQuery({
-    queryKey: ["idea", page, limit],
-    queryFn: () => getIdea({ page, limit }),
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ["idea", page, limit, debouncedSearch],
+    queryFn: () =>
+      getIdea({ page, limit, searchTerm: debouncedSearch || undefined }),
   });
   // console.log(
   //   "Fetched ideas:",
@@ -287,6 +343,9 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
     return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
   }, [data]);
 
+  const isSearching = debouncedSearch.length > 0;
+  const showSkeletonGrid = isLoading || (isFetching && isSearching);
+
   const underReviewIdeas = useMemo(() => {
     return ideas.filter((idea) => idea?.status === "APPROVED");
   }, [ideas]);
@@ -313,6 +372,43 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
 
   return (
     <div className="w-full">
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant={isSearchOpen ? "secondary" : "outline"}
+          size="sm"
+          onClick={() => setIsSearchOpen((v) => !v)}
+        >
+          <Search className="mr-2 h-4 w-4" />
+          Search
+        </Button>
+
+        <div
+          className={cn(
+            "flex items-center gap-2 overflow-hidden transition-[width,opacity] duration-200 ease-out",
+            isSearchOpen ? "w-full opacity-100 sm:w-96" : "w-0 opacity-0",
+          )}
+        >
+          <Input
+            ref={searchInputRef}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search by title / solution / problem..."
+            className="h-11"
+          />
+
+          {searchText ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setSearchText("")}
+            >
+              Clear
+            </Button>
+          ) : null}
+        </div>
+      </div>
       <AlertDialog
         open={duplicateVoteDialog.open}
         onOpenChange={(open) => {
@@ -346,144 +442,185 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
           <Badge variant="secondary">{underReviewIdeas.length}</Badge>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {underReviewIdeas.map((idea) => {
-            const imageUrls = normalizeImageUrls(idea?.images);
-            const coverImage = pickImage(imageUrls, 0);
+        {showSkeletonGrid && (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: limit }, (_, idx) => (
+              <IdeaCardSkeleton key={`idea-skeleton-${idx}`} />
+            ))}
+          </div>
+        )}
 
-            const voteErrorForCard = idea?.id ? voteErrors[idea.id] : "";
-
-            const authorName =
-              idea?.author?.name || idea?.authorName || "Unknown";
-            const createdAt = safeFormatDate(idea?.createdAt);
-
-            const votes = Array.isArray(idea?.votes)
-              ? (idea.votes as unknown as VoteLike[])
-              : [];
-            const totalVotes = votes.length;
-            const upVotes = votes.reduce((acc, vote) => {
-              return acc + (getVoteType(vote) === "UP" ? 1 : 0);
-            }, 0);
-            const downVotes = votes.reduce((acc, vote) => {
-              return acc + (getVoteType(vote) === "DOWN" ? 1 : 0);
-            }, 0);
-
-            return (
-              <Card
-                key={idea?.id}
-                className={cn(
-                  "h-full transition-transform duration-200 hover:-translate-y-1 hover:ring-foreground/20",
-                  idea?.isPaid && "ring-destructive/20",
-                )}
+        {!showSkeletonGrid && !isError && underReviewIdeas.length === 0 ? (
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 rounded-lg border bg-card px-6 py-10 text-center">
+            <img
+              src={DEFAULT_IDEA_IMAGE}
+              alt="No results"
+              className="h-24 w-24 opacity-70"
+              loading="lazy"
+            />
+            <div className="space-y-1">
+              <p className="text-base font-semibold">No ideas found</p>
+              <p className="text-sm text-muted-foreground">
+                {debouncedSearch
+                  ? `No results for "${debouncedSearch}". Try another keyword.`
+                  : "There are no approved ideas to show right now."}
+              </p>
+            </div>
+            {debouncedSearch ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSearchText("");
+                  setIsSearchOpen(true);
+                }}
               >
-                <div className="relative">
-                  <img
-                    src={coverImage}
-                    alt={idea?.title || "Idea image"}
-                    className="h-48 w-full bg-muted/30 object-contain"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        DEFAULT_IDEA_IMAGE;
-                    }}
-                  />
+                Clear search
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
 
-                  {idea?.isPaid ? (
-                    <div className="absolute right-3 top-3">
-                      <Badge className="border-destructive/30 bg-destructive text-destructive-foreground">
-                        PAID
-                      </Badge>
-                    </div>
-                  ) : null}
-                </div>
+        {!showSkeletonGrid && !isError && underReviewIdeas.length > 0 ? (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {underReviewIdeas.map((idea) => {
+              const imageUrls = normalizeImageUrls(idea?.images);
+              const coverImage = pickImage(imageUrls, 0);
 
-                <CardHeader className="gap-2">
-                  <CardTitle className="line-clamp-2">
-                    {idea?.title || "(Untitled idea)"}
-                  </CardTitle>
-                  <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="font-medium text-foreground/80">
-                      {authorName}
-                    </span>
-                    {createdAt ? (
-                      <span className="text-muted-foreground">
-                        • {createdAt}
-                      </span>
-                    ) : null}
-                  </CardDescription>
+              const voteErrorForCard = idea?.id ? voteErrors[idea.id] : "";
 
-                  {idea?.category?.name ? (
-                    <CardAction>
-                      <Badge variant="outline">{idea.category.name}</Badge>
-                    </CardAction>
-                  ) : null}
-                </CardHeader>
+              const authorName =
+                idea?.author?.name || idea?.authorName || "Unknown";
+              const createdAt = safeFormatDate(idea?.createdAt);
 
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Problem Statement
-                    </p>
-                    <p className="mt-1 line-clamp-3 text-sm leading-relaxed">
-                      {idea?.problemStatement || "—"}
-                    </p>
-                  </div>
-                </CardContent>
+              const votes = Array.isArray(idea?.votes)
+                ? (idea.votes as unknown as VoteLike[])
+                : [];
+              const totalVotes = votes.length;
+              const upVotes = votes.reduce((acc, vote) => {
+                return acc + (getVoteType(vote) === "UP" ? 1 : 0);
+              }, 0);
+              const downVotes = votes.reduce((acc, vote) => {
+                return acc + (getVoteType(vote) === "DOWN" ? 1 : 0);
+              }, 0);
 
-                <CardFooter className="flex-col items-stretch gap-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-xs text-muted-foreground">
-                      {idea?.isPaid ? (
-                        <span>
-                          Paid idea
-                          {typeof idea?.price === "number" ? (
-                            <> • ${idea.price}</>
-                          ) : null}
-                        </span>
-                      ) : (
-                        <span>Free idea</span>
-                      )}
-                    </div>
-
-                    <Button
-                      variant={idea?.isPaid ? "destructive" : "outline"}
-                      size="sm"
-                      onClick={() => {
-                        if (idea?.isPaid) {
-                          router.push(
-                            `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
-                          );
-                          return;
-                        }
-                        setSelectedIdea(idea);
-                        setDrawerOpen(true);
+              return (
+                <Card
+                  key={idea?.id}
+                  className={cn(
+                    "group flex h-full flex-col overflow-hidden border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:ring-1 hover:ring-foreground/10",
+                    idea?.isPaid && "ring-destructive/20",
+                  )}
+                >
+                  <div className="relative">
+                    <img
+                      src={coverImage}
+                      alt={idea?.title || "Idea image"}
+                      className="h-40 w-full bg-muted/30 object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          DEFAULT_IDEA_IMAGE;
                       }}
-                    >
-                      {idea?.isPaid ? "See more (Pay)" : "See more"}
-                    </Button>
+                    />
+
+                    {idea?.isPaid ? (
+                      <div className="absolute right-3 top-3">
+                        <Badge className="border-destructive/30 bg-destructive text-destructive-foreground">
+                          PAID
+                        </Badge>
+                      </div>
+                    ) : null}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                    <span>Total votes: {totalVotes}</span>
-                    <div className="flex items-center gap-3">
-                      <span>Up: {upVotes}</span>
-                      <span>Down: {downVotes}</span>
+                  <CardHeader className="gap-2 pb-3">
+                    <CardTitle className="line-clamp-2">
+                      {idea?.title || "(Untitled idea)"}
+                    </CardTitle>
+                    <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-medium text-foreground/80">
+                        {authorName}
+                      </span>
+                      {createdAt ? (
+                        <span className="text-muted-foreground">
+                          • {createdAt}
+                        </span>
+                      ) : null}
+                    </CardDescription>
+
+                    {idea?.category?.name ? (
+                      <CardAction>
+                        <Badge variant="outline">{idea.category.name}</Badge>
+                      </CardAction>
+                    ) : null}
+                  </CardHeader>
+
+                  <CardContent className="flex-1 space-y-3 pb-3">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Problem Statement
+                      </p>
+                      <p className="mt-1 line-clamp-3 text-sm leading-relaxed">
+                        {idea?.problemStatement || "—"}
+                      </p>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
+                  </CardContent>
+
+                  <CardFooter className="mt-auto flex-col items-stretch gap-2 border-t pt-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-xs text-muted-foreground">
+                        {idea?.isPaid ? (
+                          <span>
+                            Paid idea
+                            {typeof idea?.price === "number" ? (
+                              <> • ${idea.price}</>
+                            ) : null}
+                          </span>
+                        ) : (
+                          <span>Free idea</span>
+                        )}
+                      </div>
+
+                      <Button
+                        variant={idea?.isPaid ? "destructive" : "outline"}
+                        size="sm"
+                        className="whitespace-nowrap"
+                        onClick={() => {
+                          if (idea?.isPaid) {
+                            router.push(
+                              `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
+                            );
+                            return;
+                          }
+                          setSelectedIdea(idea);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        {idea?.isPaid ? "Unlock" : "See more"}
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                      <span>Total votes: {totalVotes}</span>
+                      <div className="flex items-center gap-3">
+                        <span>Up: {upVotes}</span>
+                        <span>Down: {downVotes}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             type="button"
                             size="sm"
                             variant="secondary"
+                            className="w-full"
                             disabled={isVoting || !idea?.id}
                           >
                             Vote
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
+                        <DropdownMenuContent align="start" className="w-44">
                           <DropdownMenuItem
                             disabled={isVoting || !idea?.id}
                             onClick={() => {
@@ -504,18 +641,18 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      {voteErrorForCard ? (
+                        <p className="text-xs text-destructive">
+                          {voteErrorForCard}
+                        </p>
+                      ) : null}
                     </div>
-                    {voteErrorForCard ? (
-                      <p className="text-xs text-destructive">
-                        {voteErrorForCard}
-                      </p>
-                    ) : null}
-                  </div>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </div>
+        ) : null}
 
         <Drawer
           open={drawerOpen}
