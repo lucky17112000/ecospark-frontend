@@ -7,9 +7,11 @@ import React from "react";
 
 const ideaPage = async () => {
   const queryClient = new QueryClient();
+  const page = 0;
+  const limit = 3;
   await queryClient.prefetchQuery({
-    queryKey: ["idea"],
-    queryFn: getIdea,
+    queryKey: ["idea", page, limit],
+    queryFn: () => getIdea({ page, limit }),
   });
 
   const user = await getUserInfo();
