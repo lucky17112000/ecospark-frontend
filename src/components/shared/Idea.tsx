@@ -56,6 +56,7 @@ import {
   PaginationPrevious,
 } from "../ui/pagination";
 import { Input } from "../ui/input";
+import AppTooltip from "./Tooltip";
 
 //!SECTIONpagination
 type pageItem = number | "ellipsis";
@@ -386,16 +387,27 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
         <div
           className={cn(
             "flex items-center gap-2 overflow-hidden transition-[width,opacity] duration-200 ease-out",
-            isSearchOpen ? "w-full opacity-100 sm:w-96" : "w-0 opacity-0",
+            isSearchOpen
+              ? "w-full opacity-100 sm:w-full md:w-lg lg:w-160"
+              : "w-0 opacity-0",
           )}
         >
-          <Input
-            ref={searchInputRef}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            placeholder="Search by title / solution / problem..."
-            className="h-11"
-          />
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <AppTooltip
+              side="top"
+              content="You can search by title, problem statement, or solution. "
+              trigger={
+                <Input
+                  ref={searchInputRef}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder="Search by title / solution / problem..."
+                  className="h-11 pl-9"
+                />
+              }
+            />
+          </div>
 
           {searchText ? (
             <Button
