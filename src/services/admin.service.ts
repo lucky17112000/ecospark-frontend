@@ -43,3 +43,21 @@ export const updateUserRoleByAdminAction = async (
     throw error;
   }
 };
+
+export type DeleteUserByAdminPayload = {
+  userId: string;
+};
+export const deleteUserByAdminAction = async (
+  payload: DeleteUserByAdminPayload,
+): Promise<unknown> => {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  if (!payload?.userId) throw new Error("Missing userId");
+  try {
+    const url = `${API_BASE_URL}/admin/users/delete/${payload.userId}`;
+    const response = await httpClient.delete<unknown>(url);
+    return response;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
+  }
+};

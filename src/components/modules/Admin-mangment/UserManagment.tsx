@@ -1,5 +1,6 @@
 "use client";
 import {
+  deleteUserByAdminAction,
   getAllUserByAdmiAction,
   updateUserRoleByAdminAction,
 } from "@/services/admin.service";
@@ -83,6 +84,12 @@ const UserManagment = () => {
     const rows = (data as unknown as { data?: unknown })?.data;
     return Array.isArray(rows) ? (rows as UserRow[]) : ([] as UserRow[]);
   }, [data]);
+  const { mutate: deleteUser, isPending: isDeleting } = useMutation({
+    mutationFn: deleteUserByAdminAction,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
 
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const { mutate: changeRole, isPending: isChangingRole } = useMutation({
@@ -224,7 +231,16 @@ const UserManagment = () => {
                     </TableCell>
 
                     <TableCell className="text-right">
-                      <Button type="button" variant="destructive" size="xs">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="xs"
+                        disabled={!userId || isDeleting}
+                        onClick={() => {
+                          if (!user.id) return;
+                          deleteUser({ userId: user.id });
+                        }}
+                      >
                         Delete
                       </Button>
                     </TableCell>
