@@ -2,14 +2,33 @@
 
 import AppSubmitButton from "@/components/shared/AppSubmitButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ideaUpdatebyAdminAction } from "@/services/idea.services";
+import {
+  ideaUpdatebyAdminAction,
+  toggleIdeaIspaidAction,
+  toggleIdeaIspaidPayload,
+} from "@/services/idea.services";
+import type { ApiResponse } from "@/types/api.types";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState } from "react";
+
+type IdeaUpdateByAdminPayload = {
+  ideaId: string;
+  ideaStatus: "APPROVED" | "REJECTED" | "";
+  message: string;
+  reason:
+    | "FEASIBILITY_ISSUE"
+    | "INCOMPLETE"
+    | "DUPLICATE_IDEA"
+    | "IRRELEVANT"
+    | "OTHER"
+    | "";
+};
 
 // ("use client");
 /*
@@ -20,16 +39,35 @@ import { useState } from "react";
 
 const IdeaReciePage = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const ideaIdFromParams =
     typeof params?.id === "string"
       ? params.id
       : Array.isArray(params?.id)
         ? params.id[0]
         : "";
+
+  const isPaidFromQuery = (() => {
+    const raw = searchParams?.get("isPaid");
+    if (raw === null) return null;
+    const normalized = raw.trim().toLowerCase();
+    if (["1", "true", "yes"].includes(normalized)) return true;
+    if (["0", "false", "no"].includes(normalized)) return false;
+    return null;
+  })();
+
+  const [isPaid, setIsPaid] = useState<boolean>(isPaidFromQuery ?? false);
   const [serverError, setServerError] = useState<string | null>(null);
   const { mutateAsync } = useMutation({
-    mutationFn: (payload: any) => ideaUpdatebyAdminAction(payload),
+    mutationFn: (payload: IdeaUpdateByAdminPayload) =>
+      ideaUpdatebyAdminAction(payload),
   });
+
+  const { mutateAsync: toggleIdeaIspaid, isPending: isTogglingPaid } =
+    useMutation({
+      mutationFn: (payload: toggleIdeaIspaidPayload) =>
+        toggleIdeaIspaidAction(payload),
+    });
   const form = useForm({
     defaultValues: {
       ideaId: ideaIdFromParams,
@@ -40,16 +78,20 @@ const IdeaReciePage = () => {
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
-        const result = (await mutateAsync(value)) as any;
-        if (!result.success) {
+        const result = (await mutateAsync(
+          value as IdeaUpdateByAdminPayload,
+        )) as ApiResponse<unknown> | undefined;
+        if (result && result.success === false) {
           setServerError(
             result.message || "Failed to update idea. Please try again.",
           );
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error updating idea:", error);
         setServerError(
-          error.message || "An unexpected error occurred. Please try again.",
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred. Please try again.",
         );
       }
     },
@@ -91,7 +133,62 @@ const IdeaReciePage = () => {
               )}
             </form.Field>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label>isPaid</Label>
+                <Button
+                  type="button"
+                  variant={isPaid ? "destructive" : "outline"}
+                  className="h-10 w-full rounded-lg"
+                  disabled={!ideaIdFromParams || isTogglingPaid}
+                  onClick={async () => {
+                    if (!ideaIdFromParams) return;
+                    setServerError(null);
+                    const nextPaid = !isPaid;
+                    try {
+                      const result = await toggleIdeaIspaid({
+                        ideaId: ideaIdFromParams,
+                        isPaid: nextPaid,
+                      });
+
+                      if (
+                        result &&
+                        typeof result === "object" &&
+                        "success" in result
+                      ) {
+                        const typed = result as {
+                          success?: unknown;
+                          message?: unknown;
+                        };
+                        if (typed.success === false) {
+                          setServerError(
+                            typeof typed.message === "string" && typed.message
+                              ? typed.message
+                              : "Failed to toggle isPaid. Please try again.",
+                          );
+                          return;
+                        }
+                      }
+
+                      setIsPaid(nextPaid);
+                    } catch (error: unknown) {
+                      console.error("Error toggling isPaid:", error);
+                      setServerError(
+                        error instanceof Error
+                          ? error.message
+                          : "An unexpected error occurred. Please try again.",
+                      );
+                    }
+                  }}
+                >
+                  {isTogglingPaid
+                    ? "Updating..."
+                    : isPaid
+                      ? "Paid (click to set Unpaid)"
+                      : "Unpaid (click to set Paid)"}
+                </Button>
+              </div>
+
               <form.Field name="ideaStatus">
                 {(field) => (
                   <div className="space-y-1.5">

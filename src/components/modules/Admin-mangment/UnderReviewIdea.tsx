@@ -116,8 +116,9 @@ const pickImage = (urls: string[], preferredIndex: number): string => {
 
 const UnderReviewIdea = () => {
   const router = useRouter();
-  const handlclick = ({ id }: { id: string }) => {
-    router.push(`/admin/dashboard/under-review-idea/${id}`);
+  const handlclick = ({ id, isPaid }: { id: string; isPaid: boolean }) => {
+    const paidParam = isPaid ? "1" : "0";
+    router.push(`/admin/dashboard/under-review-idea/${id}?isPaid=${paidParam}`);
   };
   const [drawerOpen, setDrawerOpen] = useState(false);
   //   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -308,7 +309,15 @@ const UnderReviewIdea = () => {
                   >
                     {idea?.isPaid ? "See more (Pay)" : "See more"}
                   </Button>
-                  <Button onClick={() => handlclick({ id: idea?.id })}>
+                  <Button
+                    onClick={() => {
+                      if (!idea?.id) return;
+                      handlclick({
+                        id: idea.id,
+                        isPaid: Boolean(idea?.isPaid),
+                      });
+                    }}
+                  >
                     Edit Idea
                   </Button>
                 </CardFooter>

@@ -10,7 +10,6 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// export const getIdea = async (): Promise<ApiResponse<IIdeaResponse[]>> => {
 //   try {
 //     const url =
 //       typeof window === "undefined" && API_BASE_URL
@@ -173,45 +172,6 @@ export const createIdea = async (
     throw error;
   }
 };
-// export const ideaUpdatebyAdminAction = async (payload: any) => {
-//   try {
-//     const response = await fetch("/api/idea/status", {
-//       method: "PUT",
-//       headers: { "content-type": "application/json" },
-//       body: JSON.stringify(payload),
-//       credentials: "include",
-//     });
-
-//     const text = await response.text();
-//     const parsed = (() => {
-//       try {
-//         return JSON.parse(text) as unknown;
-//       } catch {
-//         return null;
-//       }
-//     })();
-
-//     if (!response.ok) {
-//       const messageFromBody =
-//         parsed && typeof parsed === "object"
-//           ? (parsed as { message?: unknown }).message
-//           : undefined;
-
-//       const message =
-//         typeof messageFromBody === "string" && messageFromBody.trim()
-//           ? messageFromBody.trim()
-//           : text.trim() || `Failed to update idea (status ${response.status})`;
-
-//       throw new Error(message);
-//     }
-
-//     if (!parsed) throw new Error("Unexpected response from server");
-//     return parsed as ApiResponse<unknown>;
-//   } catch (error) {
-//     console.error("Error updating idea:", error);
-//     throw error;
-//   }
-// };
 
 export const ideaUpdatebyAdminAction = async (
   payload: any,
@@ -271,3 +231,19 @@ export const softDeleteIdeaByAdminAction = async (
 // export const getIdea2 = async (payload: DeleteByAdminPayload): => {
 //   return await httpClient.get<IIdeaResponse[]>("/idea");
 // };
+export type toggleIdeaIspaidPayload = {
+  ideaId: string;
+  isPaid: boolean;
+};
+
+export const toggleIdeaIspaidAction = async (
+  payload: toggleIdeaIspaidPayload,
+): Promise<ApiResponse<unknown>> => {
+  try {
+    if (!payload?.ideaId?.trim()) throw new Error("Missing ideaId");
+    return await httpClient.put<unknown>("idea/change-ispaid", payload);
+  } catch (error) {
+    console.error("Error toggling idea isPaid:", error);
+    throw error;
+  }
+};
