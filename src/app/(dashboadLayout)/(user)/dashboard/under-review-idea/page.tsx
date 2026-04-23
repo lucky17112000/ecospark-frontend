@@ -11,12 +11,21 @@ const UnderReviewPage = async () => {
   const queryClient = new QueryClient();
   const page = 0;
   const limit = 3;
-  await queryClient.prefetchQuery({
-    queryKey: ["idea", page, limit],
-    queryFn: () => getIdea({ page, limit }),
-  });
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: ["idea", page, limit],
+      queryFn: () => getIdea({ page, limit }),
+    });
+  } catch (error) {
+    console.error("Under review ideas prefetch skipped:", error);
+  }
 
-  const user = await getUserInfo();
+  const user = await getUserInfo().catch(() => ({
+    id: "",
+    email: "",
+    role: "",
+    needPasswordChange: false,
+  }));
   return <IdeaList user={user} />;
 };
 

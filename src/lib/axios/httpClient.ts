@@ -6,11 +6,16 @@ import { isTokenExpiredSoon } from "../token.utiles";
 import { getNewTokenWithRefreshToken } from "@/services/auth.service";
 // import { getNewTokenWithRefreshToken } from "@/services/auth.services";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-if (!API_BASE_URL) {
-  throw new Error("API_BASE_URL is not defined");
-}
+const getApiBaseUrl = (): string => {
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiBaseUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  }
+  return apiBaseUrl;
+};
+
 const axiosInstance = async () => {
+  const apiBaseUrl = getApiBaseUrl();
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
   const refreshToken = cookieStore.get("refreshToken")?.value;
@@ -30,7 +35,7 @@ const axiosInstance = async () => {
   }
   //eg: cookie: "accessToken=abc123; refreshToken=def456"
   const instance = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: apiBaseUrl,
     timeout: 30000,
     headers: baseHeaders,
   });

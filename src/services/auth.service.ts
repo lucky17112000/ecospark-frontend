@@ -17,10 +17,14 @@ import axios from "axios";
 import { ApiError } from "next/dist/server/api-utils";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-if (!BASE_API_URL) {
-  throw new Error("BASE_API_URL is not defined in environment variables");
-}
+
+const getBaseApiUrl = (): string => {
+  const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!baseApiUrl) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  }
+  return baseApiUrl;
+};
 
 // export const getIdea = async () => {
 //   const idea = await httpClient.get("/idea");
@@ -141,6 +145,7 @@ export const verifyEmailAction = async (
 };
 
 export async function getUserInfo() {
+  const baseApiUrl = getBaseApiUrl();
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
   const sessionToken = cookieStore.get("better-auth.session_token")?.value;
@@ -152,7 +157,7 @@ export async function getUserInfo() {
       needPasswordChange: false,
     };
   }
-  const res = await fetch(`${BASE_API_URL}/auth/me`, {
+  const res = await fetch(`${baseApiUrl}/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -175,7 +180,8 @@ export async function getNewTokenWithRefreshToken(
   refreshToken: string,
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_API_URL}/auth/refresh-token`, {
+    const baseApiUrl = getBaseApiUrl();
+    const res = await fetch(`${baseApiUrl}/auth/refresh-token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

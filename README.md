@@ -34,3 +34,18 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Environment Variables
+
+This project currently uses these variables:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://your-backend-domain.com/api/v1
+JWT_ACCESS_SECRET=your_access_token_secret
+```
+
+Notes:
+
+- `NEXT_PUBLIC_API_BASE_URL` is required on the client and server proxy routes.
+- `JWT_ACCESS_SECRET` is used on the server side for token verification.
+- `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BACKEND_URL` are not referenced by the current code, so they are optional and can be removed if you are only keeping deployment secrets that are actually used.
