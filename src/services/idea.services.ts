@@ -255,61 +255,6 @@ export const ideaUpdatebyAdminAction = async (
 
 type DeleteByAdminPayload = { id: string };
 
-// export const softDeleteIdeaByAdminAction = async (
-//   payload: DeleteByAdminPayload,
-// ): Promise<ApiResponse<unknown>> => {
-//   if (!payload?.id?.trim()) throw new Error("Missing id");
-
-//   if (!API_BASE_URL) {
-//     throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
-//   }
-
-//   const cookieStore = await cookies();
-//   const cookieHeader = cookieStore
-//     .getAll()
-//     .map((cookie) => `${cookie.name}=${cookie.value}`)
-//     .join("; ");
-//   const accessToken = cookieStore.get("accessToken")?.value;
-
-//   const headers: Record<string, string> = {
-//     "content-type": "application/json",
-//   };
-//   if (cookieHeader) headers.cookie = cookieHeader;
-//   if (accessToken) headers.authorization = `Bearer ${accessToken}`;
-
-//   const url = new URL(
-//     "idea/soft/by-admin",
-//     API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`,
-//   );
-
-//   const res = await fetch(url.toString(), {
-//     method: "DELETE",
-//     body: JSON.stringify({ id: payload.id }),
-//     cache: "no-store",
-//     headers,
-//   });
-
-//   const text = await res.text();
-//   const parsed = (() => {
-//     try {
-//       return JSON.parse(text) as unknown;
-//     } catch {
-//       return null;
-//     }
-//   })();
-
-//   if (!res.ok) {
-//     const msg =
-//       parsed && typeof parsed === "object" && "message" in parsed
-//         ? String((parsed as { message?: unknown }).message)
-//         : text.trim() || `Failed (status ${res.status})`;
-//     throw new Error(msg);
-//   }
-
-//   if (!parsed) throw new Error("Unexpected response from server");
-//   return parsed as ApiResponse<unknown>;
-// };
-
 export const softDeleteIdeaByAdminAction = async (
   payload: DeleteByAdminPayload,
 ): Promise<ApiResponse<unknown>> => {

@@ -10,7 +10,9 @@ export const setCookie = async (
   cookieStore.set(name, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // "strict" breaks top-level cross-site redirects (e.g. Stripe -> your site)
+    // by not sending cookies on the return navigation.
+    sameSite: "lax",
     path: "/",
     maxAge: maxAgeInSeconds,
   });

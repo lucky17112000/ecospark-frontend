@@ -57,6 +57,7 @@ import {
 } from "../ui/pagination";
 import { Input } from "../ui/input";
 import AppTooltip from "./Tooltip";
+import { createPurchaseAction } from "@/services/purchase.service";
 
 //!SECTIONpagination
 type pageItem = number | "ellipsis";
@@ -93,6 +94,11 @@ type VoteRecordLike = {
   voteType?: unknown;
 };
 
+type PurchaseRecordLike = {
+  userId?: unknown;
+  paymentStatus?: unknown;
+};
+
 const getVoteType = (vote: VoteLike): "UP" | "DOWN" | null => {
   if (vote === "UP" || vote === "DOWN") return vote;
   if (vote && typeof vote === "object") {
@@ -115,6 +121,25 @@ const getVoteUserIdFromRecord = (vote: unknown): string | null => {
   if (!vote || typeof vote !== "object") return null;
   const record = vote as VoteRecordLike;
   return typeof record.userId === "string" ? record.userId : null;
+};
+
+const isIdeaPurchasedByUser = (idea: IIdeaResponse | null, userId: string) => {
+  if (!idea?.isPaid) return false;
+
+  const purchases = (idea as unknown as { purchases?: unknown }).purchases;
+  if (!Array.isArray(purchases) || purchases.length === 0) return false;
+
+  return purchases.some((purchase) => {
+    if (!purchase || typeof purchase !== "object") return false;
+    const record = purchase as PurchaseRecordLike;
+
+    if (record.paymentStatus !== "PAID") return false;
+    if (typeof record.userId === "string") return record.userId === userId;
+
+    // If backend doesn't include userId per purchase, assume the array is scoped
+    // to the current user and treat PAID as purchased.
+    return true;
+  });
 };
 
 const normalizeImageUrls = (images: unknown): string[] => {
@@ -189,6 +214,7 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
     open: boolean;
     message: string;
   }>({ open: false, message: "" });
+  console.log("User in AllIdeas component:", user);
   //!SECTION for search
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
@@ -244,6 +270,22 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
     queryFn: () =>
       getIdea({ page, limit, searchTerm: debouncedSearch || undefined }),
   });
+  //!SECTION purchase add
+  const purchaseMutation = useMutation({
+    mutationFn: createPurchaseAction,
+    onSuccess: (res) => {
+      const url = res?.data?.sessionUrl;
+      if (typeof url === "string" && url.length > 0) {
+        window.location.assign(url); // Stripe e redirect korbe
+        return;
+      }
+      console.error("sessionUrl missing in purchase response:", res);
+    },
+    onError: (err) => {
+      console.error("Purchase failed:", err);
+    },
+  });
+  //!SECTION purchase add
   // console.log(
   //   "Fetched ideas:",
   //   data?.data.map((idea: any) => ({
@@ -594,21 +636,37 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
                       </div>
 
                       <Button
-                        variant={idea?.isPaid ? "destructive" : "outline"}
+                        variant={
+                          idea?.isPaid
+                            ? isIdeaPurchasedByUser(idea, userId)
+                              ? "outline"
+                              : "destructive"
+                            : "outline"
+                        }
                         size="sm"
                         className="whitespace-nowrap"
                         onClick={() => {
+                          if (!idea?.id) return;
+
                           if (idea?.isPaid) {
-                            router.push(
-                              `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
-                            );
+                            if (isIdeaPurchasedByUser(idea, userId)) {
+                              router.push("/dashboard/purchesed-idea");
+                              return;
+                            }
+                            // আগের router.push("/payment?...") এটা বাদ
+                            purchaseMutation.mutate({ ideaId: idea.id });
                             return;
                           }
+
                           setSelectedIdea(idea);
                           setDrawerOpen(true);
                         }}
                       >
-                        {idea?.isPaid ? "Unlock" : "See more"}
+                        {idea?.isPaid
+                          ? isIdeaPurchasedByUser(idea, userId)
+                            ? "Purchased"
+                            : "Unlock"
+                          : "See more"}
                       </Button>
                     </div>
 

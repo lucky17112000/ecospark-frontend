@@ -130,6 +130,16 @@ export const userNavItems: NavSection[] = [
       },
     ],
   },
+  {
+    title: "Purchased Ideas",
+    items: [
+      {
+        title: "Purchased Ideas",
+        href: "/dashboard/purchesed-idea",
+        icon: "FileText",
+      },
+    ],
+  },
 ];
 
 export const getNavItemsByRole = (role: UserRole): NavSection[] => {

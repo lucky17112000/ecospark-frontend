@@ -20,7 +20,7 @@ const PaymentPage = ({ searchParams }: PaymentPageProps) => {
         <CardHeader>
           <CardTitle>Payment</CardTitle>
           <CardDescription>
-            Complete payment to unlock paid ideas.
+            Complete payment to purchase paid ideas.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">

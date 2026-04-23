@@ -19,7 +19,7 @@ export type RouteConfig = {
 };
 export const userProtectedRoutes: RouteConfig = {
   pattern: [/^\/dashboard/],
-  exact: ["/payment/success"],
+  exact: [],
 };
 
 export const commonProtectedRoutes: RouteConfig = {
