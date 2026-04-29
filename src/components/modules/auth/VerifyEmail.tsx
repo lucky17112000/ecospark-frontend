@@ -33,8 +33,8 @@ const VerifyEmail = () => {
   const canSubmit = email.length > 0 && otp.length === 6;
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-neutral-50 to-neutral-100 px-4 py-10 sm:px-6">
-      <div className="w-full max-w-[460px] bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
+    <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-b from-neutral-50 to-neutral-100 px-4 py-10 sm:px-6">
+      <div className="w-full max-w-115 bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="px-6 pt-8 pb-6 sm:px-8 border-b border-neutral-100">
           <h1 className="text-xl font-semibold text-black tracking-tight">
             Verify your email
@@ -64,7 +64,7 @@ const VerifyEmail = () => {
                   return;
                 }
 
-                router.push("/dashboard");
+                router.replace("/login");
               } catch (error: any) {
                 console.error("Verification error:", error);
                 setServerError(

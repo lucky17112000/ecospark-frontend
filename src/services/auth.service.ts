@@ -16,7 +16,6 @@ import {
 import axios from "axios";
 import { ApiError } from "next/dist/server/api-utils";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 const getBaseApiUrl = (): string => {
   const baseApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -36,11 +35,14 @@ export const loginAction = async (
 ): Promise<ApiResponse<ILoginResponse>> => {
   const parsedPayload = loginZodSchema.safeParse(payload);
   if (!parsedPayload.success) {
-    console.error(
-      "Validation failed:",
-      parsedPayload.error.issues[0].message || "Unknown validation error",
-    );
-    throw new ApiError(400, parsedPayload.error.issues[0].message);
+    const message =
+      parsedPayload.error.issues[0].message || "Unknown validation error";
+    console.error("Validation failed:", message);
+    return {
+      success: false,
+      message,
+      data: null as unknown as ILoginResponse,
+    };
   }
   try {
     const response = await httpClient.post<ILoginResponse>(
@@ -54,14 +56,35 @@ export const loginAction = async (
     return response;
     // redirect("/dashboard");
   } catch (error) {
+    let message = "Login failed. Please try again.";
+
+    if (axios.isAxiosError(error)) {
+      const data = error.response?.data as unknown;
+      const maybeMessage =
+        data && typeof data === "object"
+          ? (data as { message?: unknown }).message
+          : undefined;
+      if (typeof maybeMessage === "string" && maybeMessage.trim()) {
+        message = maybeMessage.trim();
+      } else if (typeof error.message === "string" && error.message.trim()) {
+        message = error.message.trim();
+      }
+    } else if (error instanceof Error && error.message.trim()) {
+      message = error.message.trim();
+    }
+
     console.error("Login failed:", error);
-    throw error;
+    return {
+      success: false,
+      message,
+      data: null as unknown as ILoginResponse,
+    };
   }
 };
 
 export const registerAction = async (
   payload: IRegisterPayload,
-): Promise<IRegisterResponse> => {
+): Promise<ApiResponse<IRegisterResponse>> => {
   const parsedPayload = registerZodSchema.safeParse(payload);
   if (!parsedPayload.success) {
     console.error(
@@ -75,13 +98,7 @@ export const registerAction = async (
       "/auth/register",
       payload,
     );
-    const { accessToken, refreshToken, token } = response.data;
-    await setTokenInCookie("accessToken", accessToken);
-    await setTokenInCookie("refreshToken", refreshToken);
-    await setTokenInCookie("better-auth.session_token", token);
-    // return response.data;
-
-    redirect("/verify-email?email=" + response.data.user.email);
+    return response;
   } catch (error) {
     console.error("Registration failed:", error);
     throw error;
