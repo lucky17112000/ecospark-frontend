@@ -2,18 +2,9 @@
 
 import { getIdea } from "@/services/idea.services";
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { IdeaCardShell } from "@/components/shared/IdeaCardShell";
 
 //pagination
 type pageItem = number | "ellipsis";
@@ -200,7 +192,7 @@ const IdeaList = ({ user }: { user: any }) => {
           <Badge variant="secondary">{underReviewIdeas.length}</Badge>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {underReviewIdeas.map((idea) => {
             const imageUrls = normalizeImageUrls(idea?.images);
             const coverImage = pickImage(imageUrls, 0);
@@ -210,99 +202,39 @@ const IdeaList = ({ user }: { user: any }) => {
             const createdAt = safeFormatDate(idea?.createdAt);
 
             return (
-              <Card
+              <IdeaCardShell
                 key={idea?.id}
-                className={cn(
-                  "h-full transition-transform duration-200 hover:-translate-y-1 hover:ring-foreground/20",
-                  idea?.isPaid && "ring-destructive/20",
-                )}
-              >
-                <div className="relative">
-                  <img
-                    src={coverImage}
-                    alt={idea?.title || "Idea image"}
-                    className="h-48 w-full object-cover transition-transform duration-300 ease-out group-hover/card:scale-105"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        DEFAULT_IDEA_IMAGE;
-                    }}
-                  />
-
-                  {idea?.isPaid ? (
-                    <div className="absolute right-3 top-3">
-                      <Badge className="border-destructive/30 bg-destructive text-destructive-foreground">
-                        PAID
-                      </Badge>
-                    </div>
-                  ) : null}
-                </div>
-
-                <CardHeader className="gap-2">
-                  <CardTitle className="line-clamp-2">
-                    {idea?.title || "(Untitled idea)"}
-                  </CardTitle>
-                  <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="font-medium text-foreground/80">
-                      {authorName}
-                    </span>
-                    {createdAt ? (
-                      <span className="text-muted-foreground">
-                        • {createdAt}
-                      </span>
-                    ) : null}
-                  </CardDescription>
-
-                  {idea?.category?.name ? (
-                    <CardAction>
-                      <Badge variant="outline">{idea.category.name}</Badge>
-                    </CardAction>
-                  ) : null}
-                </CardHeader>
-
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Problem Statement
-                    </p>
-                    <p className="mt-1 line-clamp-3 text-sm leading-relaxed">
-                      {idea?.problemStatement || "—"}
-                    </p>
-                  </div>
-                </CardContent>
-
-                <CardFooter className="justify-between gap-3">
-                  <div className="text-xs text-muted-foreground">
-                    {idea?.isPaid ? (
-                      <span>
-                        Paid idea
-                        {typeof idea?.price === "number" ? (
-                          <> • ${idea.price}</>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span>Free idea</span>
-                    )}
-                  </div>
-
+                coverImage={coverImage}
+                title={idea?.title || "(Untitled idea)"}
+                problemStatement={idea?.problemStatement}
+                authorName={authorName}
+                createdAt={createdAt}
+                category={idea?.category?.name}
+                isPaid={idea?.isPaid}
+                price={
+                  typeof idea?.price === "number" ? idea.price : undefined
+                }
+                footer={
                   <Button
-                    variant={idea?.isPaid ? "destructive" : "outline"}
-                    size="sm"
+                    className={cn(
+                      "h-10 w-full rounded-2xl text-sm font-semibold",
+                      idea?.isPaid
+                        ? "bg-emerald-700 hover:bg-emerald-800 text-white"
+                        : "bg-emerald-600 hover:bg-emerald-700 text-white",
+                    )}
                     onClick={() => {
                       if (idea?.isPaid) {
-                        router.push(
-                          `/payment?ideaId=${encodeURIComponent(idea?.id)}`,
-                        );
+                        router.push(`/payment?ideaId=${encodeURIComponent(idea?.id)}`);
                         return;
                       }
                       setSelectedIdea(idea);
                       setDrawerOpen(true);
                     }}
                   >
-                    {idea?.isPaid ? "See more (Pay)" : "See more"}
+                    {idea?.isPaid ? "See more (Pay) →" : "See more →"}
                   </Button>
-                </CardFooter>
-              </Card>
+                }
+              />
             );
           })}
         </div>
@@ -459,7 +391,7 @@ const IdeaList = ({ user }: { user: any }) => {
         </Drawer>
 
         {underReviewIdeas.length === 0 ? (
-          <div className="mt-10 rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
+          <div className="mt-10 rounded-2xl border bg-muted/30 p-6 text-sm text-muted-foreground">
             No UNDER_REVIEW ideas found.
           </div>
         ) : null}

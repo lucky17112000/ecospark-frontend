@@ -2,18 +2,9 @@
 
 // import { deleteIdea, getIdea } from "@/services/idea.services";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +37,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { IdeaCardShell } from "@/components/shared/IdeaCardShell";
 
 //pagination
 type pageItem = number | "ellipsis";
@@ -294,7 +286,7 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
           <Badge variant="secondary">{rejectedIdeas.length}</Badge>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {rejectedIdeas.map((idea) => {
             const imageUrls = normalizeImageUrls(idea?.images);
             const coverImage = pickImage(imageUrls, 0);
@@ -304,151 +296,31 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
             const createdAt = safeFormatDate(idea?.createdAt);
 
             return (
-              <Card
+              <IdeaCardShell
                 key={idea?.id}
-                className={cn(
-                  "h-full transition-transform duration-200 hover:-translate-y-1 hover:ring-foreground/20",
-                  idea?.isPaid && "ring-destructive/20",
-                )}
-              >
-                <div className="relative">
-                  <img
-                    src={coverImage}
-                    alt={idea?.title || "Idea image"}
-                    className="h-48 w-full object-cover transition-transform duration-300 ease-out group-hover/card:scale-105"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        DEFAULT_IDEA_IMAGE;
-                    }}
-                  />
-
-                  {idea?.isPaid ? (
-                    <div className="absolute right-3 top-3">
-                      <Badge className="border-destructive/30 bg-destructive text-destructive-foreground">
-                        PAID
-                      </Badge>
-                    </div>
-                  ) : null}
-                </div>
-
-                <CardHeader className="gap-2">
-                  <CardTitle className="line-clamp-2">
-                    {idea?.title || "(Untitled idea)"}
-                  </CardTitle>
-                  <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="font-medium text-foreground/80">
-                      {authorName}
-                    </span>
-                    {createdAt ? (
-                      <span className="text-muted-foreground">
-                        • {createdAt}
-                      </span>
-                    ) : null}
-                  </CardDescription>
-
-                  {idea?.category?.name ? (
-                    <CardAction>
-                      <Badge variant="outline">{idea.category.name}</Badge>
-                    </CardAction>
-                  ) : null}
-                </CardHeader>
-
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Problem Statement
-                    </p>
-                    <p className="mt-1 line-clamp-3 text-sm leading-relaxed">
-                      {idea?.problemStatement || "—"}
-                    </p>
-                  </div>
-
-                  {(() => {
-                    const feedbackItems = parseFeedback(
-                      idea?.feedback as unknown as FeedbackLike,
-                    );
-                    const hasFeedback = feedbackItems.length > 0;
-                    const isOpen = openFeedbackIdeaId === idea?.id;
-
-                    return (
-                      <Collapsible
-                        open={isOpen}
-                        onOpenChange={(open) =>
-                          setOpenFeedbackIdeaId(open ? idea?.id : null)
-                        }
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs font-medium text-muted-foreground">
-                            Feedback
-                          </p>
-                          <CollapsibleTrigger
-                            disabled={!hasFeedback}
-                            className={cn(
-                              "inline-flex h-7 items-center justify-center rounded-md border px-2 text-xs font-medium",
-                              hasFeedback
-                                ? "bg-muted/30 text-foreground/90 hover:bg-muted/50"
-                                : "cursor-not-allowed opacity-60",
-                            )}
-                          >
-                            {hasFeedback
-                              ? isOpen
-                                ? "Hide"
-                                : "Show"
-                              : "No feedback"}
-                          </CollapsibleTrigger>
-                        </div>
-
-                        <CollapsibleContent className="mt-2 space-y-2">
-                          {hasFeedback ? (
-                            feedbackItems.map((item, idx) => (
-                              <div
-                                key={`${idea?.id}-${idx}`}
-                                className="rounded-xl border bg-muted/30 p-3"
-                              >
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <p className="text-xs font-medium text-muted-foreground">
-                                    Admin message
-                                  </p>
-                                  {item.reason ? (
-                                    <Badge variant="outline">
-                                      {item.reason}
-                                    </Badge>
-                                  ) : null}
-                                </div>
-                                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                                  {item.message || "—"}
-                                </p>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="rounded-xl border bg-muted/30 p-3 text-sm text-muted-foreground">
-                              No feedback has been added for this idea yet.
-                            </div>
-                          )}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    );
-                  })()}
-                </CardContent>
-
-                <CardFooter className="justify-between gap-3">
-                  <div className="text-xs text-muted-foreground">
-                    {idea?.isPaid ? (
-                      <span>
-                        Paid idea
-                        {typeof idea?.price === "number" ? (
-                          <> • ${idea.price}</>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span>Free idea</span>
-                    )}
-                  </div>
-
+                coverImage={coverImage}
+                title={idea?.title || "(Untitled idea)"}
+                problemStatement={idea?.problemStatement}
+                authorName={authorName}
+                createdAt={createdAt}
+                category={idea?.category?.name}
+                isPaid={idea?.isPaid}
+                price={
+                  typeof idea?.price === "number" ? idea.price : undefined
+                }
+                topRightBadge={
+                  <span className="inline-flex items-center rounded-full bg-red-500/90 px-2 py-0.5 text-[10px] font-bold text-white">
+                    Rejected
+                  </span>
+                }
+                footer={
                   <Button
-                    variant={idea?.isPaid ? "destructive" : "outline"}
-                    size="sm"
+                    className={cn(
+                      "h-10 w-full rounded-2xl text-sm font-semibold",
+                      idea?.isPaid
+                        ? "bg-emerald-700 hover:bg-emerald-800 text-white"
+                        : "bg-emerald-600 hover:bg-emerald-700 text-white",
+                    )}
                     onClick={() => {
                       if (idea?.isPaid) {
                         router.push(
@@ -461,10 +333,56 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
                       setDrawerOpen(true);
                     }}
                   >
-                    {idea?.isPaid ? "See more (Pay)" : "See more"}
+                    {idea?.isPaid ? "See more (Pay) →" : "See details →"}
                   </Button>
-                </CardFooter>
-              </Card>
+                }
+              >
+                {/* Feedback collapsible as children */}
+                {(() => {
+                  const feedbackItems = parseFeedback(idea?.feedback as unknown as FeedbackLike);
+                  const hasFeedback = feedbackItems.length > 0;
+                  const isOpen = openFeedbackIdeaId === idea?.id;
+                  return (
+                    <Collapsible
+                      open={isOpen}
+                      onOpenChange={(open) => setOpenFeedbackIdeaId(open ? idea?.id : null)}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-muted-foreground">Feedback</p>
+                        <CollapsibleTrigger
+                          disabled={!hasFeedback}
+                          className={cn(
+                            "inline-flex h-7 items-center justify-center rounded-xl border px-3 text-xs font-medium transition-colors",
+                            hasFeedback
+                              ? "bg-muted/30 text-foreground/90 hover:bg-muted/60"
+                              : "cursor-not-allowed opacity-50",
+                          )}
+                        >
+                          {hasFeedback ? (isOpen ? "Hide" : "Show") : "No feedback"}
+                        </CollapsibleTrigger>
+                      </div>
+                      <CollapsibleContent className="mt-2 space-y-2">
+                        {feedbackItems.map((item, idx) => (
+                          <div
+                            key={`${idea?.id}-${idx}`}
+                            className="rounded-xl border bg-muted/30 p-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs font-medium text-muted-foreground">Admin message</p>
+                              {item.reason ? (
+                                <Badge variant="outline">{item.reason}</Badge>
+                              ) : null}
+                            </div>
+                            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                              {item.message || "—"}
+                            </p>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })()}
+              </IdeaCardShell>
             );
           })}
         </div>
@@ -662,7 +580,7 @@ const RejectedIdeaPage = ({ user }: { user: UserLike }) => {
         </Drawer>
 
         {rejectedIdeas.length === 0 ? (
-          <div className="mt-10 rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
+          <div className="mt-10 rounded-2xl border bg-muted/30 p-6 text-sm text-muted-foreground">
             No REJECTED ideas found.
           </div>
         ) : null}

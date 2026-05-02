@@ -125,7 +125,7 @@ const UnderReviewIdea = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<IIdeaResponse | null>(null);
   const [page, setPage] = useState(1);
-  const [limit] = useState(3);
+  const [limit] = useState(20);
 
   const { data } = useQuery({
     queryKey: ["idea", page, limit],

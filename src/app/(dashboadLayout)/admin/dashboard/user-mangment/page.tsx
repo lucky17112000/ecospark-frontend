@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 const userManagmentPage = async () => {
   const queryClient = new QueryClient();
-  const page = 0;
-  const limit = 3;
+  const page = 1;
+  const limit = 4;
   try {
     await queryClient.prefetchQuery({
       queryKey: ["users", page, limit],

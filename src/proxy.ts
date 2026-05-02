@@ -6,8 +6,6 @@ import {
   isAuthRoute,
   UserRole,
 } from "./lib/authUtiles";
-import { log } from "console";
-import { access } from "fs";
 import { getNewTokenWithRefreshToken } from "./services/auth.service";
 import { isTokenExpiredSoon } from "./lib/token.utiles";
 async function refreshTokenMiddlware(refreshToken: string): Promise<boolean> {

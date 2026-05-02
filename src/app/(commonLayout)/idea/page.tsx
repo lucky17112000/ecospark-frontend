@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic";
 
 const ideaPage = async () => {
   const queryClient = new QueryClient();
-  const page = 0;
+  const page = 1;
   const limit = 3;
   try {
     await queryClient.prefetchQuery({
       queryKey: ["idea", page, limit],
-      queryFn: () => getIdea({ page, limit }),
+      queryFn: () => getIdea({ page, limit, status: "APPROVED" }),
     });
   } catch (error) {
     console.error("Idea prefetch skipped:", error);

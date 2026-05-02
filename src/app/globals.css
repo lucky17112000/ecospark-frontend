@@ -168,11 +168,145 @@
     will-change: transform;
   }
 
+  /* ── Idea infinite slider (right → left) ── */
+  @keyframes eco-idea-slide {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .eco-idea-slider {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+  }
+
+  .eco-idea-slider-track {
+    animation: eco-idea-slide 35s linear infinite;
+    will-change: transform;
+  }
+
+  .eco-idea-slider-track:hover {
+    animation-play-state: paused;
+  }
+
+  /* ── Global entrance animation system ─────────────────────────────── */
+
+  @keyframes eco-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(22px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes eco-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Slide in from top — top-to-bottom direction of travel */
+  @keyframes eco-fade-down {
+    from {
+      opacity: 0;
+      transform: translateY(-28px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Section / card entrance — apply once on mount */
+  .animate-eco-fade-up {
+    animation: eco-fade-up 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Slide card in from top — used for stat cards with left-to-right stagger */
+  .animate-eco-fade-down {
+    animation: eco-fade-down 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Simple opacity reveal */
+  .animate-eco-fade-in {
+    animation: eco-fade-in 0.5s ease both;
+  }
+
+  /* Stagger delay utilities — combine with animate-eco-fade-up / fade-in */
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animate-delay-400 {
+    animation-delay: 400ms;
+  }
+  .animate-delay-500 {
+    animation-delay: 500ms;
+  }
+  .animate-delay-600 {
+    animation-delay: 600ms;
+  }
+  .animate-delay-700 {
+    animation-delay: 700ms;
+  }
+  .animate-delay-800 {
+    animation-delay: 800ms;
+  }
+  .animate-delay-1000 {
+    animation-delay: 1000ms;
+  }
+
+  /* ── Hero image Ken Burns effect ─────────────────────────────────────── */
+
+  @keyframes eco-ken-burns {
+    0% {
+      transform: scale(1) translate(0, 0);
+    }
+    100% {
+      transform: scale(1.08) translate(-1%, -0.5%);
+    }
+  }
+
+  .animate-eco-ken-burns {
+    animation: eco-ken-burns 10s ease-in-out alternate infinite;
+    will-change: transform;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-eco-float {
       animation: none;
     }
     .eco-marquee-track {
+      animation: none;
+    }
+    .eco-idea-slider-track {
+      animation: none;
+    }
+    .animate-eco-fade-up,
+    .animate-eco-fade-down,
+    .animate-eco-fade-in {
+      animation: none;
+    }
+    .animate-eco-ken-burns {
       animation: none;
     }
   }

@@ -7,13 +7,20 @@ import { loginAction } from "@/services/auth.service";
 import { ILoginPayload, loginZodSchema } from "@/zod/auth.validation";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Leaf,
+  Zap,
+  Users,
+  Lightbulb,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// ─── Google SVG Icon ──────────────────────────────────────────────────────────
 const GoogleIcon = () => (
   <svg
     width="18"
@@ -41,28 +48,27 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// ─── Brand Logo Mark ──────────────────────────────────────────────────────────
-const BrandMark = () => (
-  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-black mb-5">
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="white"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-      <polyline points="10 17 15 12 10 7" />
-      <line x1="15" y1="12" x2="3" y2="12" />
-    </svg>
-  </div>
-);
+// Isolated so it can be wrapped in <Suspense> — useSearchParams() requires it.
+const OAuthErrorToast = () => {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const error = searchParams.get("error");
+    console.log("OAuth error param:", error);
+    if (!error) {
+      return;
+    }
+    const messages: Record<string, string> = {
+      oauth_failed: "Google sign-in failed. Please try again.",
+      no_user_found: "No Google account found. Please register first.",
+      session_error: "Session expired. Please sign in again.",
+      token_error: "Token error. Please try again.",
+      server_error: "Server error. Please try again later.",
+    };
+    toast.error(messages[error] ?? `Sign-in failed: ${error}`);
+  }, [searchParams]);
+  return null;
+};
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 const LoginForm = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -73,33 +79,25 @@ const LoginForm = () => {
   });
 
   const form = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
     onSubmit: async ({ value }) => {
       setServerError(null);
       try {
         const result = (await mutateAsync(value)) as any;
-
         if (!result?.success) {
           setServerError(result?.message || "Login failed. Please try again.");
           return;
         }
-
         toast.success("Login successful");
-
         const role = String(result?.data?.user?.role ?? "").toUpperCase();
         const needPasswordChange = Boolean(
           result?.data?.user?.needPasswordChange,
         );
-
         if (needPasswordChange) {
           router.push("/change-password");
           router.refresh();
           return;
         }
-
         router.push(role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
         router.refresh();
       } catch (error: any) {
@@ -112,164 +110,301 @@ const LoginForm = () => {
   });
 
   return (
-    // Full-screen centering wrapper — neutral-100 bg on all screen sizes
-    <div className="min-h-screen w-full flex items-center justify-center bg-neutral-100 px-4 py-10 sm:px-6">
-      {/*
-        Card:
-        - w-full so it fills mobile screens edge-to-edge (minus px-4 padding)
-        - max-w-[420px] caps width on tablet/desktop
-        - rounded-2xl, white bg, subtle border
-      */}
-      <div className="w-full max-w-[420px] bg-white border border-neutral-200 rounded-2xl overflow-hidden">
-        {/* ── Header ───────────────────────────────────────────────────── */}
-        <div className="px-6 pt-8 pb-6 sm:px-8 border-b border-neutral-100">
-          <BrandMark />
-          <h1 className="text-xl font-semibold text-black tracking-tight">
-            Welcome back
-          </h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            Sign in to your account to continue.
-          </p>
+    <div className="min-h-screen flex bg-neutral-50">
+      <Suspense fallback={null}>
+        <OAuthErrorToast />
+      </Suspense>
+      {/* ── Left Hero Panel (lg+) ──────────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] sticky top-0 h-screen flex-col justify-between p-10 xl:p-14 bg-linear-to-br from-emerald-900 via-emerald-800 to-emerald-600 overflow-hidden">
+        {/* Ambient glow blobs */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-emerald-400/15 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 right-1/3 w-64 h-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+
+        {/* Floating decorative icons */}
+        <Leaf className="absolute top-28 right-16 w-9 h-9 text-emerald-400/30 animate-eco-float pointer-events-none" />
+        <Leaf
+          className="absolute bottom-40 left-14 w-5 h-5 text-emerald-300/25 animate-eco-float pointer-events-none"
+          style={{ animationDelay: "2s" }}
+        />
+        <Zap
+          className="absolute top-1/2 right-12 w-5 h-5 text-yellow-400/35 animate-eco-float pointer-events-none"
+          style={{ animationDelay: "1s" }}
+        />
+        <Leaf
+          className="absolute top-[65%] left-[38%] w-3 h-3 text-emerald-200/20 animate-eco-float pointer-events-none"
+          style={{ animationDelay: "3s" }}
+        />
+
+        {/* Brand */}
+        <div className="relative z-10 animate-eco-fade-down">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 shadow-lg">
+              <Leaf className="size-5 text-white" />
+            </span>
+            <div>
+              <span className="text-xl font-bold text-white tracking-tight block leading-none">
+                EcoSpark Hub
+              </span>
+              <span className="text-xs text-emerald-200/70 mt-0.5 block">
+                Sustainable Future Initiative
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* ── Body ─────────────────────────────────────────────────────── */}
-        <div className="px-6 py-7 sm:px-8 sm:py-8">
-          {/* Google Sign-In */}
-          <button
-            type="button"
-            className="
-              w-full flex items-center justify-center gap-2.5
-              h-10 px-4
-              bg-white border border-neutral-200 rounded-xl
-              text-sm text-black font-medium
-              hover:bg-neutral-50 active:bg-neutral-100
-              transition-colors duration-150
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black
-            "
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-neutral-200" />
-            <span className="text-xs text-neutral-400 whitespace-nowrap">
-              or sign in with email
-            </span>
-            <div className="flex-1 h-px bg-neutral-200" />
+        {/* Hero text + stats */}
+        <div className="relative z-10 space-y-8 animate-eco-fade-up animate-delay-200">
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <span className="h-px w-8 bg-emerald-400/60" />
+              <span className="text-emerald-200/75 text-xs font-medium tracking-widest uppercase">
+                Join the Green Revolution
+              </span>
+            </div>
+            <h2 className="text-4xl xl:text-5xl font-bold text-white leading-[1.1]">
+              Ignite Change,
+              <br />
+              <span className="text-yellow-400">Shape Tomorrow</span>
+            </h2>
+            <p className="mt-4 text-emerald-100/65 text-sm leading-relaxed max-w-sm">
+              Join a global community of innovators, environmentalists, and
+              dreamers working together to create a sustainable future for
+              generations to come.
+            </p>
           </div>
 
-          {/* Email + Password form — all original logic preserved */}
-          <form
-            method="POST"
-            action="#"
-            noValidate
-            onSubmit={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              form.handleSubmit();
-            }}
-            className="space-y-4"
-          >
-            {/* Email */}
-            <form.Field
-              name="email"
-              validators={{ onChange: loginZodSchema.shape.email }}
-            >
-              {(field) => (
-                <AppField
-                  field={field}
-                  label="Email"
-                  type="email"
-                  placeholder="you@example.com"
-                />
-              )}
-            </form.Field>
-
-            {/* Password */}
-            <form.Field
-              name="password"
-              validators={{ onChange: loginZodSchema.shape.password }}
-            >
-              {(field) => (
-                <AppField
-                  field={field}
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  append={
-                    <Button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-neutral-400 hover:text-black transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="size-4" />
-                      ) : (
-                        <Eye className="size-4" />
-                      )}
-                    </Button>
-                  }
-                />
-              )}
-            </form.Field>
-
-            {/* Forgot password */}
-            <div className="text-right -mt-1">
-              <Link
-                href="/forgot-password"
-                className="text-xs text-neutral-400 hover:text-black underline-offset-4 hover:underline transition-colors"
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            {(
+              [
+                { icon: Users, value: "50K+", label: "Active Members" },
+                {
+                  icon: Lightbulb,
+                  value: "1,200+",
+                  label: "Sustainable Ideas",
+                },
+                { icon: Zap, value: "1.2M", label: "Energy Saved (kWh)" },
+              ] as const
+            ).map(({ icon: Icon, value, label }) => (
+              <div
+                key={label}
+                className="p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 text-center hover:bg-white/15 transition-colors duration-200"
               >
-                Forgot password?
-              </Link>
+                <Icon className="w-4 h-4 text-emerald-300 mx-auto mb-1.5" />
+                <div className="text-base font-bold text-white leading-none">
+                  {value}
+                </div>
+                <div className="text-[10px] text-emerald-200/65 leading-tight mt-0.5">
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 animate-eco-fade-in animate-delay-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-emerald-200/50">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3" />
+              Secure Platform
+            </span>
+            <span>·</span>
+            <span>Verified Ideas</span>
+            <span>·</span>
+            <span>Active Community</span>
+          </div>
+          <p className="mt-2 text-emerald-200/30 text-[11px]">
+            © 2026 EcoSpark Hub. All rights reserved.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right Form Panel ──────────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-8">
+        <div className="w-full max-w-105">
+          {/* Mobile-only brand mark */}
+          <div className="lg:hidden text-center mb-8 animate-eco-fade-down">
+            <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/25 mb-3">
+              <Leaf className="size-7 text-white" />
+            </span>
+            <h2 className="text-lg font-bold text-foreground">EcoSpark Hub</h2>
+            <p className="text-sm text-muted-foreground">
+              Sustainable Future Initiative
+            </p>
+          </div>
+
+          {/* Card */}
+          <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden animate-eco-fade-up">
+            {/* Card header */}
+            <div className="px-6 pt-8 pb-6 sm:px-8 border-b border-neutral-100 text-center">
+              <div className="inline-flex size-14 items-center justify-center rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-600/25 mb-4 animate-eco-float">
+                <Leaf className="size-7 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Welcome back
+              </h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Enter your credentials to access your account
+              </p>
             </div>
 
-            {/* Server error */}
-            {serverError && (
-              <Alert className="border border-neutral-200 bg-neutral-50 rounded-xl py-3 px-4">
-                <AlertDescription className="text-sm text-red-600">
-                  {serverError}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Submit */}
-            <form.Subscribe
-              selector={(s) => [s.canSubmit, s.isSubmitting] as const}
-            >
-              {([canSubmit, isSubmitting]) => (
-                <AppSubmitButton
-                  isPending={isSubmitting}
-                  disabled={!canSubmit}
-                  classname="
-                    w-full h-10
-                    bg-black hover:bg-neutral-800 active:bg-neutral-900
-                    text-white text-sm font-medium
-                    rounded-xl
-                    transition-colors duration-150
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  "
-                >
-                  Log in
-                </AppSubmitButton>
-              )}
-            </form.Subscribe>
-
-            {/* Sign-up link */}
-            <p className="text-center text-sm text-neutral-400 pt-1">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/register"
-                className="text-black font-medium hover:underline underline-offset-4 transition-colors"
+            {/* Card body */}
+            <div className="px-6 py-7 sm:px-8">
+              {/* Google sign-in */}
+              <button
+                onClick={() => {
+                  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+                  //TODO redirect path after login in frontend
+                  window.location.href = `${baseUrl}/auth/login/google`;
+                }}
+                type="button"
+                className="w-full flex items-center justify-center gap-2.5 h-11 px-4 bg-white border border-neutral-200 rounded-xl text-sm text-foreground font-medium hover:bg-neutral-50 hover:border-neutral-300 hover:shadow-sm active:scale-[0.98] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
               >
-                Sign up
+                <GoogleIcon />
+                Continue with Google
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px bg-neutral-200" />
+                <span className="text-xs text-muted-foreground whitespace-nowrap px-1">
+                  or continue with email
+                </span>
+                <div className="flex-1 h-px bg-neutral-200" />
+              </div>
+
+              {/* Form */}
+              <form
+                method="POST"
+                action="#"
+                noValidate
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  form.handleSubmit();
+                }}
+                className="space-y-4"
+              >
+                <div className="animate-eco-fade-up animate-delay-100">
+                  <form.Field
+                    name="email"
+                    validators={{ onChange: loginZodSchema.shape.email }}
+                  >
+                    {(field) => (
+                      <AppField
+                        field={field}
+                        label="Email"
+                        type="email"
+                        placeholder="hello@ecosparkhub.com"
+                      />
+                    )}
+                  </form.Field>
+                </div>
+
+                <div className="animate-eco-fade-up animate-delay-200">
+                  <form.Field
+                    name="password"
+                    validators={{ onChange: loginZodSchema.shape.password }}
+                  >
+                    {(field) => (
+                      <AppField
+                        field={field}
+                        label="Password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        append={
+                          <Button
+                            type="button"
+                            onClick={() => setShowPassword((p) => !p)}
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="size-4" />
+                            ) : (
+                              <Eye className="size-4" />
+                            )}
+                          </Button>
+                        }
+                      />
+                    )}
+                  </form.Field>
+                </div>
+
+                {/* Forgot password */}
+                <div className="text-right -mt-1">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs text-muted-foreground hover:text-emerald-600 underline-offset-4 hover:underline transition-colors duration-150"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                {/* Server error */}
+                {serverError && (
+                  <Alert className="border border-red-100 bg-red-50 rounded-xl py-3 px-4 animate-eco-fade-in">
+                    <AlertDescription className="text-sm text-red-600">
+                      {serverError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Submit */}
+                <form.Subscribe
+                  selector={(s) => [s.canSubmit, s.isSubmitting] as const}
+                >
+                  {([canSubmit, isSubmitting]) => (
+                    <AppSubmitButton
+                      isPending={isSubmitting}
+                      disabled={!canSubmit}
+                      classname="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-sm font-semibold rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md hover:shadow-emerald-600/20"
+                    >
+                      Sign In →
+                    </AppSubmitButton>
+                  )}
+                </form.Subscribe>
+
+                {/* Register link */}
+                <p className="text-center text-sm text-muted-foreground pt-1">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="text-emerald-600 font-semibold hover:underline underline-offset-4 transition-colors"
+                  >
+                    Create account
+                  </Link>
+                </p>
+              </form>
+            </div>
+          </div>
+
+          {/* Below-card notes */}
+          <div className="mt-5 text-center space-y-2 animate-eco-fade-in animate-delay-500">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              Secure login with 256-bit encryption
+            </p>
+            <p className="text-xs text-muted-foreground">
+              By continuing, you agree to our{" "}
+              <Link
+                href="/terms"
+                className="text-emerald-600 hover:underline underline-offset-2"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="text-emerald-600 hover:underline underline-offset-2"
+              >
+                Privacy Policy
               </Link>
             </p>
-          </form>
+          </div>
         </div>
       </div>
     </div>

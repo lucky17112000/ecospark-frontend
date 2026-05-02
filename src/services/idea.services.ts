@@ -247,3 +247,27 @@ export const toggleIdeaIspaidAction = async (
     throw error;
   }
 };
+
+export const getIdeaById = async (
+  id: string,
+): Promise<ApiResponse<IIdeaResponse>> => {
+  try {
+    const response = await httpClient.get<IIdeaResponse>(`/idea/${id}`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching idea by id:", error);
+    throw error;
+  }
+};
+
+export const getLimitedIdea = async (): Promise<
+  ApiResponse<IIdeaResponse[]>
+> => {
+  try {
+    const response = await httpClient.get<IIdeaResponse[]>("idea/home/limited");
+    return response;
+  } catch (error) {
+    console.error("Error fetching ideas:", error);
+    throw error;
+  }
+};

@@ -3,9 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProviders from "@/lib/provider/QueryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
-import LandingNavbar from "@/components/shared/LandingNavbar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import Chatbot from "@/components/chatbot/Chatbot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +46,7 @@ export default function RootLayout({
             <TooltipProvider>{children}</TooltipProvider>
             <Toaster />
           </QueryProviders>
+          <Chatbot />
         </ThemeProvider>
       </body>
     </html>

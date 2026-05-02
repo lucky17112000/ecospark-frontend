@@ -302,3 +302,26 @@ export const logoutAction = async () => {
   await deleteCookie("refreshToken");
   await deleteCookie("better-auth.session_token");
 };
+
+// Called by the Google OAuth callback page — same as loginAction cookie logic
+// export const setGoogleTokensAction = async ({
+//   accessToken,
+//   refreshToken,
+//   token,
+// }: {
+//   accessToken: string;
+//   refreshToken: string;
+//   token?: string;
+// }): Promise<{ success: boolean; message: string }> => {
+//   try {
+//     await setTokenInCookie("accessToken", accessToken);
+//     await setTokenInCookie("refreshToken", refreshToken);
+//     if (token) {
+//       await setTokenInCookie("better-auth.session_token", token, 24 * 60 * 60);
+//     }
+//     return { success: true, message: "Tokens set successfully" };
+//   } catch (error) {
+//     console.error("Failed to set Google tokens:", error);
+//     return { success: false, message: "Failed to set authentication tokens" };
+//   }
+// };
