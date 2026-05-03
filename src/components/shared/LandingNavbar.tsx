@@ -35,16 +35,17 @@ export type LandingNavbarProps = {
 
 const DEFAULT_LINKS: LandingNavLink[] = [
   { label: "Home", href: "/" },
-  { label: "About", href: "/about" },
   { label: "Ideas", href: "/idea" },
   { label: "Dashboard", href: "/dashboard" },
-  { label: "My Profile", href: "/my-profile" },
+  { label: "Blog", href: "/blog" },
+  { label: "About", href: "/about" },
 ];
 
 const EXPLORE_LINKS: LandingNavLink[] = [
   { label: "Contact", href: "/contact" },
-  { label: "Blog", href: "/idea?sort=trending" },
+
   { label: "Our Mission", href: "/mission" },
+  { label: "My Profile", href: "/my-profile" },
 ];
 
 const isLinkActive = (href: string, pathname: string): boolean => {
@@ -62,25 +63,23 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        "relative select-none rounded-full px-3 py-1.5 text-sm font-medium",
+        "group flex select-none items-center rounded-full px-3 py-1.5 text-sm font-medium",
         "transition-all duration-200 ease-out",
         isActive
-          ? [
-              "text-emerald-700 dark:text-emerald-300",
-              "bg-emerald-50 dark:bg-emerald-950/60",
-              "shadow-sm ring-1 ring-emerald-100 dark:ring-emerald-900/60",
-            ]
-          : [
-              "text-muted-foreground hover:text-foreground",
-              "hover:bg-accent/60",
-              // Underline expands from left on hover
-              "after:absolute after:bottom-0.5 after:left-3",
-              "after:h-0.5 after:w-[calc(100%-1.5rem)] after:origin-left after:scale-x-0",
-              "after:rounded-full after:bg-emerald-500/80",
-              "after:transition-transform after:duration-200 hover:after:scale-x-100",
-            ],
+          ? "bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:ring-emerald-900/60"
+          : "text-muted-foreground hover:bg-emerald-50/80 hover:text-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300",
       )}
     >
+      <span
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-out",
+          isActive
+            ? "mr-1.5 max-w-3.5 opacity-100"
+            : "max-w-0 opacity-0 group-hover:mr-1.5 group-hover:max-w-3.5 group-hover:opacity-100",
+        )}
+      >
+        <LeafIcon className="size-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
+      </span>
       {label}
     </Link>
   );

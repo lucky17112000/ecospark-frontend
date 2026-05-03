@@ -97,6 +97,25 @@ export const adminNavItems: NavSection[] = [
       },
     ],
   },
+  {
+    title: "Blog Management",
+    items: [
+      {
+        title: "Create Blog",
+        href: "/admin/dashboard/blog-create",
+        icon: "FileText",
+      },
+    ],
+  },
+  {
+    items: [
+      {
+        title: "Delete Blog",
+        href: "/admin/dashboard/blog-delete",
+        icon: "FileText",
+      },
+    ],
+  },
 ];
 
 export const userNavItems: NavSection[] = [

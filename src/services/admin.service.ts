@@ -118,3 +118,41 @@ export const getAdminDashboardStatsAction = async (): Promise<
     throw error;
   }
 };
+
+// http://localhost:5000/api/v1/admin/users/stats
+/*
+{
+    "success": true,
+    "message": "Individual user stats retrieved successfully",
+    "data": {
+        "totalIdeas": 8,
+        "approvedIdeas": 4,
+        "totalVotes": 0,
+        "totalUpVotes": 0,
+        "totalDownVotes": 0
+    }
+}
+*/
+
+export type AdminIndividualUserStats = {
+  totalIdeas?: number;
+  approvedIdeas?: number;
+  totalVotes?: number;
+  totalUpVotes?: number;
+  totalDownVotes?: number;
+};
+
+export const getAdminIndividualUserStatsAction = async (): Promise<
+  ApiResponse<AdminIndividualUserStats>
+> => {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  try {
+    const response = await httpClient.get<AdminIndividualUserStats>(
+      `${API_BASE_URL}/admin/users/stats`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching individual user stats:", error);
+    throw error;
+  }
+};

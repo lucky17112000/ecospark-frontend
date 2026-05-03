@@ -8,6 +8,7 @@ import { useCountUp } from "./useCountUp";
 interface KPICardProps {
   title: string;
   value: number;
+  suffix?: string;
   icon: LucideIcon;
   trend?: string;
   trendUp?: boolean;
@@ -19,6 +20,7 @@ interface KPICardProps {
 export function KPICard({
   title,
   value,
+  suffix = "",
   icon: Icon,
   trend,
   trendUp = true,
@@ -37,7 +39,7 @@ export function KPICard({
               {title}
             </p>
             <p className="text-4xl font-bold tracking-tight tabular-nums">
-              {animatedValue.toLocaleString()}
+              {animatedValue.toLocaleString()}{suffix}
             </p>
             {trend && (
               <p

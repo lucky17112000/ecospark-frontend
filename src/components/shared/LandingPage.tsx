@@ -37,7 +37,6 @@ import {
   SunIcon,
   BikeIcon,
   SparklesIcon,
-  CalendarIcon,
   ChevronRightIcon,
   QuoteIcon,
 } from "lucide-react";
@@ -45,6 +44,7 @@ import { Footer2 } from "../footer2";
 import { useQuery } from "@tanstack/react-query";
 import { getLimitedIdea } from "@/services/idea.services";
 import { IdeaInfiniteSlider } from "./IdeaInfiniteSlider";
+import { getBlogs, GetBlogResponse } from "@/services/blog.service";
 
 // ── hero slider ──────────────────────────────────────────────────────────────
 
@@ -376,7 +376,20 @@ const LandingPage = () => {
     queryFn: () => getLimitedIdea(),
   });
 
+  const { data: blogData, isLoading: blogsLoading } = useQuery({
+    queryKey: ["blogShow"],
+    queryFn: () => getBlogs(),
+  });
+
   const liveIdeas = Array.isArray(data?.data) ? data.data : [];
+
+  const rawBlogData = blogData?.data;
+  const allBlogs: GetBlogResponse[] = Array.isArray(rawBlogData)
+    ? rawBlogData
+    : Array.isArray((rawBlogData as unknown as { data: GetBlogResponse[] })?.data)
+      ? (rawBlogData as unknown as { data: GetBlogResponse[] }).data
+      : [];
+  const featuredBlogs = allBlogs.slice(0, 3);
 
   // Hero image slider
   const [activeSlide, setActiveSlide] = useState(0);
@@ -896,7 +909,7 @@ const LandingPage = () => {
                 </h2>
               </div>
               <Link
-                href="/about"
+                href="/blog"
                 className={cn(
                   buttonVariants({ variant: "outline" }),
                   "shrink-0 gap-1.5",
@@ -908,39 +921,77 @@ const LandingPage = () => {
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {ARTICLES.map(({ category, title, date, description }) => (
-                <Card
-                  key={title}
-                  className="group flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-emerald-200 dark:hover:ring-emerald-800"
-                >
-                  <div className="flex h-36 items-center justify-center bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/50 dark:to-emerald-900/30">
-                    <LeafIcon className="size-12 text-emerald-300 dark:text-emerald-700" />
-                  </div>
-                  <CardContent className="flex flex-1 flex-col gap-3 py-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {category}
-                      </Badge>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <CalendarIcon className="size-3" />
-                        {date}
-                      </span>
+              {blogsLoading &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border bg-card overflow-hidden animate-pulse"
+                  >
+                    <div className="h-48 bg-muted" />
+                    <div className="p-5 space-y-3">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-full" />
+                      <div className="h-4 bg-muted rounded w-5/6" />
+                      <div className="h-px bg-border mt-2" />
+                      <div className="flex items-center gap-2 pt-1">
+                        <div className="size-6 rounded-full bg-muted" />
+                        <div className="h-3 bg-muted rounded w-24" />
+                      </div>
                     </div>
-                    <h3 className="font-heading font-semibold leading-snug transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
-                      {title}
-                    </h3>
-                    <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                      {description}
-                    </p>
-                    <Link
-                      href="/about"
-                      className="flex items-center gap-1 text-sm font-medium text-emerald-600 transition-all hover:gap-2 dark:text-emerald-400"
+                  </div>
+                ))}
+
+              {!blogsLoading &&
+                (featuredBlogs.length > 0 ? featuredBlogs : ARTICLES.map((a) => ({
+                  id: a.title,
+                  title: a.title,
+                  content: a.description,
+                  authorName: "EcoSpark Team",
+                } as GetBlogResponse))).map((blog, i) => {
+                  const authorName =
+                    blog.authorName ?? blog.author?.name ?? "EcoSpark Team";
+                  const preview =
+                    blog.content?.length > 130
+                      ? blog.content.slice(0, 130) + "…"
+                      : blog.content;
+                  return (
+                    <Card
+                      key={blog.id ?? i}
+                      className="group flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/10 hover:border-emerald-200 dark:hover:border-emerald-800"
                     >
-                      Read more <ArrowRightIcon className="size-3.5" />
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="relative flex h-44 items-center justify-center bg-linear-to-br from-emerald-50 to-emerald-100 transition-all duration-300 group-hover:from-emerald-100 group-hover:to-emerald-200 dark:from-emerald-950/50 dark:to-emerald-900/30 dark:group-hover:from-emerald-900/60 dark:group-hover:to-emerald-800/40">
+                        <LeafIcon className="size-16 text-emerald-300 transition-all duration-300 group-hover:scale-110 group-hover:text-emerald-400 dark:text-emerald-700 dark:group-hover:text-emerald-600" />
+                        <div className="absolute top-3 left-3">
+                          <Badge className="bg-emerald-600/90 text-white backdrop-blur-sm border-0 text-xs">
+                            Blog
+                          </Badge>
+                        </div>
+                      </div>
+                      <CardContent className="flex flex-1 flex-col gap-3 p-5">
+                        <h3 className="font-heading font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+                          {blog.title}
+                        </h3>
+                        <p className="flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-3">
+                          {preview}
+                        </p>
+                        <div className="flex items-center justify-between border-t pt-3">
+                          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[0.65rem] font-bold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">
+                              {authorName.slice(0, 1).toUpperCase()}
+                            </span>
+                            <span className="truncate max-w-[120px]">{authorName}</span>
+                          </span>
+                          <Link
+                            href="/blog"
+                            className="flex items-center gap-1 text-xs font-medium text-emerald-600 transition-all hover:gap-2 dark:text-emerald-400"
+                          >
+                            Read more <ArrowRightIcon className="size-3" />
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           </div>
         </section>
