@@ -298,6 +298,75 @@
     100% { opacity: 0; transform: translateX(100%); }
   }
 
+  /* ── Skeleton shimmer sweep ───────────────────────────────────────────── */
+  @keyframes eco-shimmer-slide {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(200%); }
+  }
+
+  .eco-skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--muted);
+    border-radius: var(--radius-md);
+  }
+
+  .eco-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      oklch(0.72 0.12 145 / 0.45) 50%,
+      transparent 100%
+    );
+    animation: eco-shimmer-slide 1.8s ease-in-out infinite;
+  }
+
+  .dark .eco-skeleton::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      oklch(0.6 0.14 170 / 0.22) 50%,
+      transparent 100%
+    );
+  }
+
+  /* ── Spinner ring ─────────────────────────────────────────────────────── */
+  @keyframes eco-spinner-rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes eco-pulse-ring {
+    0%   { transform: scale(0.9); opacity: 0.6; }
+    50%  { transform: scale(1.1); opacity: 0.2; }
+    100% { transform: scale(0.9); opacity: 0.6; }
+  }
+
+  /* ── Top-bar loader ───────────────────────────────────────────────────── */
+  @keyframes eco-topbar-fill {
+    from { width: 0%; opacity: 1; }
+    80%  { width: 90%; opacity: 1; }
+    to   { width: 100%; opacity: 0; }
+  }
+
+  .eco-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      oklch(0.72 0.2 145),
+      oklch(0.65 0.18 170),
+      oklch(0.6 0.2 200)
+    );
+    box-shadow: 0 0 12px oklch(0.72 0.2 145 / 0.6);
+    animation: eco-topbar-fill 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    z-index: 9999;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-eco-float {
       animation: none;
@@ -314,6 +383,12 @@
       animation: none;
     }
     .animate-eco-ken-burns {
+      animation: none;
+    }
+    .eco-skeleton::after {
+      animation: none;
+    }
+    .eco-topbar {
       animation: none;
     }
   }

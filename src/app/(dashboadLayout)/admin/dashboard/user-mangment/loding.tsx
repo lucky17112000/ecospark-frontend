@@ -1,11 +1,8 @@
-import React from 'react';
+import MySkeleton from "@/components/shared/MySkeleton";
+import React from "react";
 
 const userLoadingPage = () => {
-    return (
-        <div>
-            user loading page...
-        </div>
-    );
+  return <MySkeleton />;
 };
 
 export default userLoadingPage;

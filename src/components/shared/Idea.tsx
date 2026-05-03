@@ -5,11 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { IIdeaResponse } from "@/types/idea.type";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Search, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Search,
+  Sprout,
+  ThumbsDown,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 import { castVote } from "@/services/vote.service";
 import {
   DropdownMenu,
@@ -39,8 +44,9 @@ import { Input } from "../ui/input";
 import AppTooltip from "./Tooltip";
 import { createPurchaseAction } from "@/services/purchase.service";
 import { IdeaCardShell } from "./IdeaCardShell";
+import { EcoCardSkeleton, EcoSpinner } from "./EcoLoading";
 
-//!SECTIONpagination
+// ─── Pagination helper ────────────────────────────────────────────────────────
 type pageItem = number | "ellipsis";
 const getPaginationItems = (currentPage: number, totalPages: number) => {
   const safeTotal = Math.max(1, totalPages);
@@ -57,7 +63,6 @@ const getPaginationItems = (currentPage: number, totalPages: number) => {
   items.push(safeTotal);
   return items;
 };
-//!SECTIONpagination
 
 const DEFAULT_IDEA_IMAGE = "/window.svg";
 
@@ -138,30 +143,17 @@ const pickImage = (urls: string[], preferredIndex: number): string => {
   return urls[preferredIndex] || urls[0] || DEFAULT_IDEA_IMAGE;
 };
 
-const IdeaCardSkeleton = () => (
-  <div className="flex flex-col overflow-hidden rounded-3xl bg-card ring-1 ring-border shadow-sm">
-    <Skeleton className="h-52 w-full rounded-none sm:h-56" />
-    <div className="flex flex-1 flex-col gap-3 p-4">
-      <div className="flex items-center gap-2">
-        <Skeleton className="size-6 rounded-full" />
-        <Skeleton className="h-3 w-28" />
-        <Skeleton className="ml-auto h-3 w-16" />
-      </div>
-      <Skeleton className="h-8 w-full rounded-xl" />
-      <div className="grid grid-cols-2 gap-2">
-        <Skeleton className="h-10 rounded-2xl" />
-        <Skeleton className="h-10 rounded-2xl" />
-      </div>
-    </div>
-  </div>
-);
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const AllIdeas = ({ user }: { user?: unknown }) => {
+  // ── State ────────────────────────────────────────────────────────────────
   const [voteErrors, setVoteErrors] = useState<Record<string, string>>({});
   const [duplicateVoteDialog, setDuplicateVoteDialog] = useState<{
     open: boolean;
     message: string;
   }>({ open: false, message: "" });
+
+  // Search state — preserved as-is for future commands
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchText, setSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -229,15 +221,18 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
   const totalPages = Math.max(1, meta?.totalPages ?? 1);
   const currentPage = Math.min(Math.max(1, meta?.page ?? page), totalPages);
   const totalItems = meta?.total ?? undefined;
+
   useEffect(() => {
     if (page !== currentPage) setPage(currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, totalPages]);
+
   const canGoPrev = currentPage > 1;
   const canGoNext = currentPage < totalPages;
-  const paginationItems = useMemo(() => {
-    return getPaginationItems(currentPage, totalPages);
-  }, [currentPage, totalPages]);
+  const paginationItems = useMemo(
+    () => getPaginationItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
   const showingRange = useMemo(() => {
     if (typeof totalItems !== "number") return null;
     if (totalItems <= 0) return null;
@@ -304,61 +299,141 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
     }
   };
 
-  const ideas = useMemo(() => {
-    return Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[]);
-  }, [data]);
+  const ideas = useMemo(
+    () => (Array.isArray(data?.data) ? data.data : ([] as IIdeaResponse[])),
+    [data],
+  );
 
+  // Search-awareness flags — used by parent commands
   const isSearching = debouncedSearch.length > 0;
   const showSkeletonGrid = isLoading || (isFetching && isSearching);
 
-  const underReviewIdeas = useMemo(() => {
-    return ideas.filter((idea) => idea?.status === "APPROVED");
-  }, [ideas]);
+  const underReviewIdeas = useMemo(
+    () => ideas.filter((idea) => idea?.status === "APPROVED"),
+    [ideas],
+  );
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="w-full animate-eco-fade-down animate-delay-200">
-      {/* ── Search bar ─────────────────────────────────────────── */}
-      <div className="mb-6">
-        <div className="relative mx-auto max-w-lg">
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <AppTooltip
-            side="bottom"
-            content="You can search by title, problem statement, or solution."
-            trigger={
-              <Input
-                ref={searchInputRef}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search ideas by title, solution or problem..."
-                className="h-12 rounded-2xl border-neutral-200 bg-background pl-11 pr-10 text-sm shadow-sm transition-all duration-200 focus:ring-2 focus:ring-emerald-500 dark:border-neutral-700"
-              />
-            }
-          />
-          {searchText ? (
-            <button
-              type="button"
-              onClick={() => setSearchText("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-neutral-100 hover:text-foreground dark:hover:bg-neutral-800"
-            >
-              <X className="size-4" />
-            </button>
-          ) : null}
-        </div>
-        {debouncedSearch ? (
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Showing results for{" "}
-            <span className="font-medium text-foreground">
-              &ldquo;{debouncedSearch}&rdquo;
-            </span>
-          </p>
-        ) : null}
-      </div>
+      {/* ══ HERO SEARCH SECTION ════════════════════════════════════════════ */}
+      <section className="relative mb-10 overflow-hidden rounded-3xl border border-emerald-100/70 bg-linear-to-br from-emerald-50/90 via-white to-teal-50/70 px-6 py-12 dark:border-emerald-900/30 dark:from-emerald-950/40 dark:via-card dark:to-teal-950/20">
+        {/* Decorative background blobs */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-500/10"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-16 -left-16 size-48 rounded-full bg-teal-300/20 blur-3xl dark:bg-teal-500/10"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 h-px w-3/4 -translate-x-1/2 bg-linear-to-r from-transparent via-emerald-300/60 to-transparent dark:via-emerald-700/40"
+        />
 
+        <div className="relative flex flex-col items-center gap-7">
+          {/* Brand chip */}
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3.5 py-1.5 shadow-sm dark:border-emerald-800/50 dark:bg-emerald-950/60">
+            <Sprout className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
+              EcoSpark Ideas
+            </span>
+          </div>
+
+          {/* Heading */}
+          <div className="space-y-2.5 text-center">
+            <h1 className="bg-linear-to-br from-emerald-700 via-emerald-600 to-teal-600 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent dark:from-emerald-300 dark:via-emerald-400 dark:to-teal-300 sm:text-4xl">
+              Discover Eco Ideas
+            </h1>
+            <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+              Browse, vote, and get inspired by community-driven sustainability
+              solutions from around the world.
+            </p>
+          </div>
+
+          {/* ── Search input ─────────────────────────────────────────────── */}
+          <div className="w-full max-w-xl">
+            {/* Outer glow wrapper */}
+            <div className="group relative">
+              {/* Animated gradient border on focus */}
+              <div className="absolute -inset-px rounded-2xl bg-linear-to-r from-emerald-400 via-teal-400 to-emerald-500 opacity-0 blur-sm transition-all duration-300 group-focus-within:opacity-50 dark:group-focus-within:opacity-30" />
+
+              <div className="relative flex items-center">
+                {/* Left icon: spinner while fetching, search icon otherwise */}
+                <div className="pointer-events-none absolute left-4 z-10 transition-colors duration-200 text-muted-foreground group-focus-within:text-emerald-600 dark:group-focus-within:text-emerald-400">
+                  {isFetching && isSearching ? (
+                    <EcoSpinner size="xs" />
+                  ) : (
+                    <Search className="size-4" />
+                  )}
+                </div>
+
+                <AppTooltip
+                  side="bottom"
+                  delay={600}
+                  content={
+                    <span className="flex items-center gap-1.5">
+                      <Sprout className="size-3.5 shrink-0 text-emerald-300" />
+                      Search by title, problem statement, or solution
+                    </span>
+                  }
+                  trigger={
+                    <Input
+                      ref={searchInputRef}
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      placeholder="Search ideas — title, solution, or problem…"
+                      className={cn(
+                        "relative h-13 rounded-2xl border bg-white pl-11 pr-11 text-sm shadow-sm",
+                        "placeholder:text-muted-foreground/55",
+                        "border-emerald-100 transition-all duration-200",
+                        "focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none",
+                        "dark:border-emerald-900/40 dark:bg-card dark:focus:border-emerald-700/60 dark:focus:ring-emerald-600/20",
+                      )}
+                    />
+                  }
+                />
+
+                {/* Clear button */}
+                {searchText ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchText("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded-full text-muted-foreground transition-all duration-150 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Search status text */}
+            <div className="mt-3 min-h-5 text-center text-sm">
+              {debouncedSearch ? (
+                <p className="animate-eco-fade-in text-muted-foreground">
+                  Showing results for{" "}
+                  <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-900/40 dark:text-emerald-300 dark:ring-emerald-800/40">
+                    {debouncedSearch}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-muted-foreground/50 text-xs">
+                  Type to filter ideas by keyword
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ DUPLICATE VOTE DIALOG ══════════════════════════════════════════ */}
       <AlertDialog
         open={duplicateVoteDialog.open}
-        onOpenChange={(open) => {
-          setDuplicateVoteDialog((prev) => ({ ...prev, open }));
-        }}
+        onOpenChange={(open) =>
+          setDuplicateVoteDialog((prev) => ({ ...prev, open }))
+        }
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -374,52 +449,108 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-6">
-        <div className="mb-5 flex items-end justify-between gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">
-            All Approved Ideas
-          </h1>
-          <Badge variant="secondary">{underReviewIdeas.length}</Badge>
+      {/* ══ IDEAS GRID SECTION ════════════════════════════════════════════ */}
+      <div className="mx-auto w-full max-w-6xl px-4 py-2">
+        {/* Section header */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg font-bold tracking-tight text-foreground">
+              {isSearching ? "Search Results" : "All Approved Ideas"}
+            </h2>
+            {!showSkeletonGrid && (
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-900/30 dark:text-emerald-400 dark:ring-emerald-800/50">
+                {underReviewIdeas.length}
+              </span>
+            )}
+          </div>
+
+          {showingRange && !showSkeletonGrid && (
+            <p className="text-xs text-muted-foreground">
+              {showingRange.start}–{showingRange.end} of {showingRange.total}
+            </p>
+          )}
         </div>
 
-        {/* Skeleton grid */}
+        {/* ── Skeleton grid ─────────────────────────────────────────────── */}
         {showSkeletonGrid && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: limit }, (_, idx) => (
-              <IdeaCardSkeleton key={`idea-skeleton-${idx}`} />
+              <EcoCardSkeleton key={`idea-skeleton-${idx}`} />
             ))}
           </div>
         )}
 
-        {/* Empty state */}
-        {!showSkeletonGrid && !isError && underReviewIdeas.length === 0 ? (
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 rounded-2xl border bg-card px-6 py-12 text-center shadow-sm">
-            <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-900/20">
-              <Search className="size-7 text-emerald-400" />
+        {/* ── Error state ───────────────────────────────────────────────── */}
+        {!showSkeletonGrid && isError && (
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 rounded-3xl border border-red-100 bg-red-50/60 px-6 py-16 text-center dark:border-red-900/30 dark:bg-red-950/20">
+            <div className="inline-flex size-16 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/30">
+              <AlertTriangle className="size-7 text-red-500" />
             </div>
-            <div className="space-y-1">
-              <p className="text-base font-semibold">No ideas found</p>
-              <p className="text-sm text-muted-foreground">
-                {debouncedSearch
-                  ? `No results for "${debouncedSearch}". Try another keyword.`
-                  : "There are no approved ideas to show right now."}
+            <div className="space-y-1.5">
+              <p className="text-base font-semibold text-foreground">
+                Something went wrong
+              </p>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                We couldn&apos;t load ideas right now. Please try again.
               </p>
             </div>
-            {debouncedSearch ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["idea"] })
+              }
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {/* ── Empty state ───────────────────────────────────────────────── */}
+        {!showSkeletonGrid && !isError && underReviewIdeas.length === 0 && (
+          <div className="mt-10 flex flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-emerald-200/80 bg-linear-to-b from-emerald-50/60 to-white px-6 py-16 text-center dark:border-emerald-800/30 dark:from-emerald-950/20 dark:to-card">
+            {/* Animated icon */}
+            <div className="relative">
+              <div className="absolute inset-0 animate-ping rounded-full bg-emerald-200/60 animation-duration-[2s] dark:bg-emerald-800/30" />
+              <div className="relative inline-flex size-16 items-center justify-center rounded-2xl bg-emerald-100 shadow-inner dark:bg-emerald-900/40">
+                {debouncedSearch ? (
+                  <Search className="size-7 text-emerald-500" />
+                ) : (
+                  <Sprout className="size-7 text-emerald-500" />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-base font-semibold text-foreground">
+                {debouncedSearch ? "No matching ideas" : "No ideas yet"}
+              </p>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                {debouncedSearch
+                  ? `We couldn't find any results for "${debouncedSearch}". Try a different keyword.`
+                  : "There are no approved ideas to show right now. Check back soon!"}
+              </p>
+            </div>
+
+            {debouncedSearch && (
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                size="sm"
+                className="rounded-xl border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-800/60 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400"
                 onClick={() => setSearchText("")}
               >
+                <X className="mr-1.5 size-3.5" />
                 Clear search
               </Button>
-            ) : null}
+            )}
           </div>
-        ) : null}
+        )}
 
-        {/* Ideas grid */}
-        {!showSkeletonGrid && !isError && underReviewIdeas.length > 0 ? (
+        {/* ── Ideas grid ────────────────────────────────────────────────── */}
+        {!showSkeletonGrid && !isError && underReviewIdeas.length > 0 && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {underReviewIdeas.map((idea) => {
               const imageUrls = normalizeImageUrls(idea?.images);
@@ -469,6 +600,7 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
                         </span>
                         <span className="ml-auto">Total: {totalVotes}</span>
                       </div>
+
                       {/* Action buttons */}
                       <div className="grid grid-cols-2 gap-2">
                         <Button
@@ -490,11 +622,11 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
                               purchaseMutation.mutate({ ideaId: idea.id });
                               return;
                             }
-                            // Seed cache so the detail page renders instantly
-                            queryClient.setQueryData(
-                              ["idea-detail", idea.id],
-                              { success: true, message: "ok", data: idea },
-                            );
+                            queryClient.setQueryData(["idea-detail", idea.id], {
+                              success: true,
+                              message: "ok",
+                              data: idea,
+                            });
                             router.push(`/idea/${idea.id}`);
                           }}
                         >
@@ -504,6 +636,7 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
                               : "Unlock"
                             : "See more"}
                         </Button>
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -540,6 +673,7 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+
                       {voteErrorForCard ? (
                         <p className="text-xs text-destructive">
                           {voteErrorForCard}
@@ -551,73 +685,91 @@ const AllIdeas = ({ user }: { user?: unknown }) => {
               );
             })}
           </div>
-        ) : null}
-
+        )}
       </div>
 
-      {totalPages > 1 ? (
-        <div className="mt-8 space-y-2">
-          {showingRange ? (
+      {/* ══ PAGINATION ════════════════════════════════════════════════════ */}
+      {totalPages > 1 && (
+        <div className="mt-10 space-y-3">
+          {showingRange && (
             <p className="text-center text-xs text-muted-foreground">
               Showing {showingRange.start}–{showingRange.end} of{" "}
-              {showingRange.total}
+              {showingRange.total} ideas
             </p>
-          ) : null}
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  aria-disabled={!canGoPrev}
-                  className={!canGoPrev ? "pointer-events-none opacity-50" : ""}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!canGoPrev) return;
-                    setPage((p) => Math.max(1, p - 1));
-                  }}
-                />
-              </PaginationItem>
-              {paginationItems.map((item, idx) => {
-                if (item === "ellipsis") {
-                  return (
-                    <PaginationItem key={`ellipsis-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  );
-                }
-                const pageNumber = item;
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
+          )}
+
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-1 rounded-2xl border bg-card px-2 py-1.5 shadow-sm">
+              <Pagination>
+                <PaginationContent className="gap-0.5">
+                  <PaginationItem>
+                    <PaginationPrevious
                       href="#"
-                      isActive={pageNumber === currentPage}
+                      aria-disabled={!canGoPrev}
+                      className={cn(
+                        "rounded-xl",
+                        !canGoPrev && "pointer-events-none opacity-40",
+                      )}
                       onClick={(e) => {
                         e.preventDefault();
-                        if (pageNumber === currentPage) return;
-                        setPage(pageNumber);
+                        if (!canGoPrev) return;
+                        setPage((p) => Math.max(1, p - 1));
                       }}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
+                    />
                   </PaginationItem>
-                );
-              })}
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  aria-disabled={!canGoNext}
-                  className={!canGoNext ? "pointer-events-none opacity-50" : ""}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!canGoNext) return;
-                    setPage((p) => Math.min(totalPages, p + 1));
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+
+                  {paginationItems.map((item, idx) => {
+                    if (item === "ellipsis") {
+                      return (
+                        <PaginationItem key={`ellipsis-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+                    const pageNumber = item;
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          href="#"
+                          isActive={pageNumber === currentPage}
+                          className={cn(
+                            "rounded-xl transition-all duration-150",
+                            pageNumber === currentPage &&
+                              "bg-emerald-600 text-white hover:bg-emerald-700 hover:text-white border-emerald-600",
+                          )}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (pageNumber === currentPage) return;
+                            setPage(pageNumber);
+                          }}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      aria-disabled={!canGoNext}
+                      className={cn(
+                        "rounded-xl",
+                        !canGoNext && "pointer-events-none opacity-40",
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!canGoNext) return;
+                        setPage((p) => Math.min(totalPages, p + 1));
+                      }}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 };

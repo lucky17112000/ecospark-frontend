@@ -230,7 +230,7 @@ const UnderReviewIdea = () => {
                     src={coverImage}
                     alt={idea?.title || "Idea image"}
                     className="h-48 w-full object-cover transition-transform duration-300 ease-out group-hover/card:scale-105"
-                    loading="lazy"
+                    loading="eager"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
                         DEFAULT_IDEA_IMAGE;
@@ -478,11 +478,11 @@ const UnderReviewIdea = () => {
         </Drawer>
         {/*  */}
 
-        {underReviewIdeas.length === 0 ? (
+        {/* {underReviewIdeas.length === 0 ? (
           <div className="mt-10 rounded-xl border bg-muted/30 p-6 text-sm text-muted-foreground">
             No UNDER_REVIEW ideas found.
           </div>
-        ) : null}
+        ) : null} */}
       </div>
       {totalPages > 1 ? (
         <div className="mt-8 space-y-2">

@@ -13,7 +13,7 @@ type AppTooltipProps = {
   trigger: React.ReactElement;
   content: React.ReactNode;
   delay?: number;
-} & React.ComponentPropsWithoutRef<typeof TooltipContent>;
+} & Omit<React.ComponentPropsWithoutRef<typeof TooltipContent>, "content">;
 
 export default function AppTooltip({
   trigger,

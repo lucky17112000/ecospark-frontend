@@ -386,7 +386,9 @@ const LandingPage = () => {
   const rawBlogData = blogData?.data;
   const allBlogs: GetBlogResponse[] = Array.isArray(rawBlogData)
     ? rawBlogData
-    : Array.isArray((rawBlogData as unknown as { data: GetBlogResponse[] })?.data)
+    : Array.isArray(
+          (rawBlogData as unknown as { data: GetBlogResponse[] })?.data,
+        )
       ? (rawBlogData as unknown as { data: GetBlogResponse[] }).data
       : [];
   const featuredBlogs = allBlogs.slice(0, 3);
@@ -771,7 +773,7 @@ const LandingPage = () => {
                   Ideas flowing in right now
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Real submissions from the community · 
+                  Real submissions from the community ·
                 </p>
               </div>
               <Link
@@ -788,10 +790,7 @@ const LandingPage = () => {
           </div>
 
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-            <IdeaInfiniteSlider
-              ideas={liveIdeas}
-              isLoading={isLoading}
-            />
+            <IdeaInfiniteSlider ideas={liveIdeas} isLoading={isLoading} />
           </div>
         </section>
 
@@ -942,12 +941,18 @@ const LandingPage = () => {
                 ))}
 
               {!blogsLoading &&
-                (featuredBlogs.length > 0 ? featuredBlogs : ARTICLES.map((a) => ({
-                  id: a.title,
-                  title: a.title,
-                  content: a.description,
-                  authorName: "EcoSpark Team",
-                } as GetBlogResponse))).map((blog, i) => {
+                (featuredBlogs.length > 0
+                  ? featuredBlogs
+                  : ARTICLES.map(
+                      (a) =>
+                        ({
+                          id: a.title,
+                          title: a.title,
+                          content: a.description,
+                          authorName: "EcoSpark Team",
+                        }) as GetBlogResponse,
+                    )
+                ).map((blog, i) => {
                   const authorName =
                     blog.authorName ?? blog.author?.name ?? "EcoSpark Team";
                   const preview =
@@ -979,7 +984,9 @@ const LandingPage = () => {
                             <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[0.65rem] font-bold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">
                               {authorName.slice(0, 1).toUpperCase()}
                             </span>
-                            <span className="truncate max-w-[120px]">{authorName}</span>
+                            <span className="truncate max-w-[120px]">
+                              {authorName}
+                            </span>
                           </span>
                           <Link
                             href="/blog"
@@ -1095,7 +1102,7 @@ const LandingPage = () => {
                   href="/idea"
                   className={cn(
                     buttonVariants({ variant: "outline", size: "lg" }),
-                    "border-white/40 text-white hover:bg-white/10 hover:text-white",
+                    "border-white/40 text-cyan-950-800 hover:bg-white/10 hover:text-white",
                   )}
                 >
                   Browse Ideas

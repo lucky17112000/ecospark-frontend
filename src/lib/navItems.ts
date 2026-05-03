@@ -38,6 +38,37 @@ export const getCommonNavItems = (role: UserRole): NavSection[] => {
 
 export const adminNavItems: NavSection[] = [
   {
+    title: "User Management",
+    items: [
+      {
+        title: "User Management",
+        href: "/admin/dashboard/user-mangment",
+        icon: "Clock",
+      },
+    ],
+  },
+
+  {
+    title: "Blog Management",
+    items: [
+      {
+        title: "Create Blog",
+        href: "/admin/dashboard/blog-create",
+        icon: "FileText",
+      },
+    ],
+  },
+  {
+    items: [
+      {
+        title: "Delete Blog",
+        href: "/admin/dashboard/delete-blog",
+        icon: "FileText",
+      },
+    ],
+  },
+
+  {
     title: "Ecosystem Management",
     items: [
       {
@@ -48,7 +79,6 @@ export const adminNavItems: NavSection[] = [
     ],
   },
   {
-    title: "rejected-ideas",
     items: [
       {
         title: "Rejected Ideas",
@@ -68,7 +98,6 @@ export const adminNavItems: NavSection[] = [
   //   ],
   // },
   {
-    title: "Under Review Ideas",
     items: [
       {
         title: "Under Review Ideas",
@@ -84,35 +113,6 @@ export const adminNavItems: NavSection[] = [
         title: "Payments",
         href: "/admin/dashboard/payment-managment",
         icon: "CreditCard",
-      },
-    ],
-  },
-  {
-    title: "User Management",
-    items: [
-      {
-        title: "User Management",
-        href: "/admin/dashboard/user-mangment",
-        icon: "Clock",
-      },
-    ],
-  },
-  {
-    title: "Blog Management",
-    items: [
-      {
-        title: "Create Blog",
-        href: "/admin/dashboard/blog-create",
-        icon: "FileText",
-      },
-    ],
-  },
-  {
-    items: [
-      {
-        title: "Delete Blog",
-        href: "/admin/dashboard/blog-delete",
-        icon: "FileText",
       },
     ],
   },

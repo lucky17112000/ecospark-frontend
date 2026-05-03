@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   try {
     //   console.log("Proxying request:", request);
     const { pathname } = request.nextUrl;
-    console.log("Request pathname:", pathname);
+    // console.log("Request pathname:", pathname);
     const accessToken = request.cookies.get("accessToken")?.value;
     const refreshToken = request.cookies.get("refreshToken")?.value;
     // NOTE: Frontend middleware usually shouldn't (and often can't) verify JWT signatures,

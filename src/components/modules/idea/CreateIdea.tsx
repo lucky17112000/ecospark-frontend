@@ -64,7 +64,7 @@ const SectionCard = ({
   </div>
 );
 
-const FieldError = ({ message }: { message: string }) =>
+export const FieldError = ({ message }: { message: string }) =>
   message ? (
     <p className="mt-1.5 flex items-center gap-1 text-xs text-destructive">
       <AlertCircleIcon className="h-3 w-3 shrink-0" />
@@ -72,7 +72,7 @@ const FieldError = ({ message }: { message: string }) =>
     </p>
   ) : null;
 
-const StyledTextarea = ({
+export const StyledTextarea = ({
   id,
   name,
   value,
@@ -573,8 +573,7 @@ const CreateIdeaPage = ({ id }: { id: string }) => {
           <form.Field name="price">
             {(field) => {
               const err =
-                field.state.meta.isTouched &&
-                field.state.meta.errors.length > 0
+                field.state.meta.isTouched && field.state.meta.errors.length > 0
                   ? String(field.state.meta.errors[0])
                   : "";
               return (
@@ -637,7 +636,9 @@ const CreateIdeaPage = ({ id }: { id: string }) => {
         )}
 
         {/* ── Submit ── */}
-        <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
+        <form.Subscribe
+          selector={(s) => [s.canSubmit, s.isSubmitting] as const}
+        >
           {([canSubmit, isSubmitting]) => (
             <AppSubmitButton
               isPending={isSubmitting}

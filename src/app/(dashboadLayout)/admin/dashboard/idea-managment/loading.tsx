@@ -1,7 +1,8 @@
+import MySkeleton from "@/components/shared/MySkeleton";
 import React from "react";
 
 const ideaLoading = () => {
-  return <div>idea loading page...</div>;
+  return <MySkeleton />;
 };
 
 export default ideaLoading;
