@@ -1,17 +1,18 @@
-import Link from "next/link";
+"use server";
 
-export default function AdminDashboardPage() {
-  return (
-    <div>
-      <h1>Admin Dashboard</h1>
-      <ul>
-        <li>
-          <Link href="/admin/dashboard/idea-managment">Idea management</Link>
-        </li>
-        <li>
-          <Link href="/admin/dashboard/user-mangment">User management</Link>
-        </li>
-      </ul>
-    </div>
-  );
+import { getAdminDashboardStatsAction } from "@/services/admin.service";
+import { QueryClient } from "@tanstack/react-query";
+import AdminAnalytics from "./analytics/AdminAnalytics";
+
+export default async function AdminDashboardPage() {
+  const queryClient = new QueryClient();
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: ["adminDashboardData"],
+      queryFn: () => getAdminDashboardStatsAction(),
+    });
+  } catch (error) {
+    console.error("Admin dashboard prefetch skipped:", error);
+  }
+  return <AdminAnalytics />;
 }

@@ -80,3 +80,41 @@ export const deleteUserByAdminAction = async (
     throw error;
   }
 };
+/*
+
+{
+    "success": true,
+    "message": "Admin dashboard stats retrieved successfully",
+    "data": {
+        "totalUsers": 3,
+        "totalAdmins": 2,
+        "totalEnergyIdeas": 12,
+        "totalPlasticIdeas": 1,
+        "totalTreeIdeas": 4,
+        "totalOthersIdeas": 2
+    }
+}
+*/
+
+export type AdminDashboardStats = {
+  totalUsers?: number;
+  totalAdmins?: number;
+  totalEnergyIdeas?: number;
+  totalPlasticIdeas?: number;
+  totalTreeIdeas?: number;
+  totalOthersIdeas?: number;
+};
+export const getAdminDashboardStatsAction = async (): Promise<
+  ApiResponse<AdminDashboardStats>
+> => {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined");
+  try {
+    const response = await httpClient.get<AdminDashboardStats>(
+      `${API_BASE_URL}/admin/dashboard/stats`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching admin dashboard stats:", error);
+    throw error;
+  }
+};
